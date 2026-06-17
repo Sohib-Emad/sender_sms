@@ -112,9 +112,10 @@ class SendSmsBatchUseCase {
         sentAt: DateTime.now(),
       ));
 
-      // Delay between messages
-      if (i < students.length - 1 && settings.delaySeconds > 0) {
-        await Future.delayed(Duration(seconds: settings.delaySeconds));
+      // Delay between messages (min 500ms to avoid Android rate limiter)
+      if (i < students.length - 1) {
+        final delay = settings.delaySeconds > 0 ? settings.delaySeconds : 0.5;
+        await Future.delayed(Duration(milliseconds: (delay * 1000).toInt()));
       }
     }
 

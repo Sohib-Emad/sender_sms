@@ -15,7 +15,8 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
 
   Future<void> _onLoadStats(
       HomeLoadStats event, Emitter<HomeState> emit) async {
-    emit(HomeLoading());
+    if (state is HomeLoading) return;
+    if (state is! HomeLoaded) emit(HomeLoading());
     try {
       final sessions = await _getSessionsUseCase();
       final students = await _studentsRepository.getStudents();

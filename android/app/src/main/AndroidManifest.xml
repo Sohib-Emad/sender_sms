@@ -1,7 +1,9 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <!-- SMS Permissions (SEND only - no READ needed) -->
-    <uses-permission android:name="android.permission.SEND_SMS"/>
+    <!-- maxSdkVersion=33: prevents Google Play Protect flagging on Android 14+ -->
+    <!-- On Android 14+, only the default SMS app can use SmsManager directly -->
+    <uses-permission android:name="android.permission.SEND_SMS" android:maxSdkVersion="33"/>
     <uses-permission android:name="android.permission.READ_PHONE_STATE" android:maxSdkVersion="32"/>
     <uses-permission android:name="android.permission.READ_PHONE_NUMBERS" android:maxSdkVersion="32"/>
 

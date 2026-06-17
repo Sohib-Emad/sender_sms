@@ -33,10 +33,24 @@ class _ManualSmsScreenState extends State<ManualSmsScreen> {
     setState(() => _isSending = true);
 
     try {
-      final status = await Permission.sms.request();
-      if (!status.isGranted) {
+      final apiLevel = await _smsService.getAndroidApiLevel();
+
+      // On Android 14+, SEND_SMS is not in the manifest (avoids Google Play flagging).
+      // Skip permission request and rely on default SMS app status.
+      if (apiLevel < 34) {
+        final status = await Permission.sms.request();
+        if (!status.isGranted) {
+          if (!mounted) return;
+          context.showSnack('تم رفض صلاحية إرسال SMS', isError: true);
+          return;
+        }
+      }
+
+      // On API 34+, if not default SMS app, send will fail with SecurityException
+      final isDefault = await _smsService.isDefaultSmsApp();
+      if (!isDefault) {
         if (!mounted) return;
-        context.showSnack('تم رفض صلاحية إرسال SMS', isError: true);
+        _showNotDefaultSmsAppDialog();
         return;
       }
 
@@ -75,6 +89,33 @@ class _ManualSmsScreenState extends State<ManualSmsScreen> {
     } finally {
       if (mounted) setState(() => _isSending = false);
     }
+  }
+
+  void _showNotDefaultSmsAppDialog() {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('تطبيق SMS افتراضي',
+            textDirection: TextDirection.rtl),
+        content: const Text(
+          'يجب جعل هذا التطبيق افتراضياً لإرسال SMS\nبدون رسائل تأكيد',
+          textDirection: TextDirection.rtl,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('إلغاء'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              _smsService.requestDefaultSmsApp();
+              Navigator.of(context).pop();
+            },
+            child: const Text('فتح الإعدادات'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override

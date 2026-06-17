@@ -7,6 +7,8 @@ import '../../core/constants/app_strings.dart';
 import '../../core/di/injection.dart';
 import '../../core/router/app_router.dart';
 import '../../domain/usecases/export_report_usecase.dart';
+import '../home/bloc/home_bloc.dart';
+import '../home/bloc/home_event.dart';
 
 class ResultsScreen extends StatelessWidget {
   final String sessionId;
@@ -33,7 +35,10 @@ class ResultsScreen extends StatelessWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.home_rounded),
-            onPressed: () => context.go(AppRouter.home),
+            onPressed: () {
+              sl<HomeBloc>().add(HomeLoadStats());
+              context.go(AppRouter.home);
+            },
           ),
         ],
       ),
@@ -222,7 +227,10 @@ class ResultsScreen extends StatelessWidget {
           width: double.infinity,
           height: 52,
           child: ElevatedButton.icon(
-            onPressed: () => context.go(AppRouter.home),
+            onPressed: () {
+              sl<HomeBloc>().add(HomeLoadStats());
+              context.go(AppRouter.home);
+            },
             icon: const Icon(Icons.home_rounded),
             label: const Text('العودة للرئيسية'),
           ),

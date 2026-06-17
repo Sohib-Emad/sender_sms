@@ -436,7 +436,7 @@ class _SendSmsBody extends StatelessWidget {
           const Padding(
             padding: EdgeInsets.symmetric(horizontal: 24),
             child: Text(
-              'على Android 14+ يجب جعل هذا التطبيق افتراضياً لإرسال SMS',
+              'يجب جعل هذا التطبيق افتراضياً لإرسال SMS\nبدون رسائل تأكيد',
               textDirection: TextDirection.rtl,
               textAlign: TextAlign.center,
               style: TextStyle(fontSize: 15),

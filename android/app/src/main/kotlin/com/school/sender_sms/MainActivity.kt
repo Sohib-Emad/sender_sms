@@ -37,6 +37,9 @@ class MainActivity : FlutterActivity() {
                 "requestDefaultSmsApp" -> {
                     openDefaultSmsSettings(result)
                 }
+                "getAndroidApiLevel" -> {
+                    result.success(Build.VERSION.SDK_INT)
+                }
                 else -> result.notImplemented()
             }
         }
@@ -49,7 +52,10 @@ class MainActivity : FlutterActivity() {
         simSlot: Int,
         result: MethodChannel.Result
     ) {
-        if (!hasSmsPermission()) {
+        // On API 34+, default SMS app doesn't need SEND_SMS permission declared in manifest
+        // On API < 34, SEND_SMS runtime permission is required
+        val isDefault = isDefaultSmsApp()
+        if (!hasSmsPermission() && !isDefault) {
             result.success(mapOf("success" to false, "error" to "الإذن مطلوب لإرسال الرسائل"))
             return
         }
@@ -94,12 +100,17 @@ class MainActivity : FlutterActivity() {
     }
 
     private fun isDefaultSmsApp(): Boolean {
-        if (Build.VERSION.SDK_INT < 34) return true
         return try {
-            val roleManager = getSystemService(Context.ROLE_SERVICE) as android.app.role.RoleManager
-            roleManager.isRoleHeld(android.app.role.RoleManager.ROLE_SMS)
+            val isDefault = if (Build.VERSION.SDK_INT >= 31) {
+                val roleManager = getSystemService(Context.ROLE_SERVICE) as android.app.role.RoleManager
+                roleManager.isRoleHeld(android.app.role.RoleManager.ROLE_SMS)
+            } else {
+                val defaultSms = Settings.Secure.getString(contentResolver, "sms_default_application")
+                packageName == defaultSms
+            }
+            isDefault
         } catch (_: Exception) {
-            true
+            false
         }
     }
 

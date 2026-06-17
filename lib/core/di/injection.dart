@@ -47,7 +47,7 @@ Future<void> setupDependencies() async {
   sl.registerLazySingleton(() => ExportReportUseCase(sl()));
 
   // ── BLoCs ─────────────────────────────────────────────
-  sl.registerFactory(() => HomeBloc(sl(), sl()));
+  sl.registerLazySingleton(() => HomeBloc(sl(), sl()));
   sl.registerFactory(() => ImportBloc(sl()));
   sl.registerFactory(() => PreviewBloc(sl<StudentsRepository>()));
   sl.registerFactory(() => TemplateBloc(sl()));

@@ -4,11 +4,13 @@ import 'package:sender_sms/presentation/data_preview/bloc/preview_event.dart';
 import 'package:sender_sms/presentation/history/bloc/history_event.dart';
 import 'package:sender_sms/presentation/home/bloc/home_event.dart';
 import 'package:sender_sms/presentation/message_template/bloc/template_event.dart';
+import 'package:sender_sms/presentation/send_sms/bloc/send_event.dart';
 import 'package:sender_sms/presentation/settings/bloc/settings_event.dart';
 import '../../presentation/home/home_screen.dart';
 import '../../presentation/import_excel/import_excel_screen.dart';
 import '../../presentation/data_preview/data_preview_screen.dart';
 import '../../presentation/message_template/message_template_screen.dart';
+import '../../presentation/send_sms/bloc/send_bloc.dart';
 import '../../presentation/send_sms/send_sms_screen.dart';
 import '../../presentation/results/results_screen.dart';
 import '../../presentation/failed_messages/failed_messages_screen.dart';
@@ -78,6 +80,8 @@ class AppRouter {
         path: sendSms,
         builder: (context, state) {
           final args = state.extra as Map<String, dynamic>;
+          // Reset SendBloc singleton from any previous completed/error state
+          sl<SendBloc>().add(SendReset());
           return SendSmsScreen(
             students: args['students'] as List<Student>,
             template: args['template'] as String,

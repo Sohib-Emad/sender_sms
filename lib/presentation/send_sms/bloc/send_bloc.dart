@@ -34,11 +34,17 @@ class SendBloc extends Bloc<SendEvent, SendState> {
   Future<void> _onStart(SendStartBatch event, Emitter<SendState> emit) async {
     emit(SendRequestingPermission());
 
-    // Request SMS permission
-    final status = await Permission.sms.request();
-    if (!status.isGranted) {
-      emit(SendPermissionDenied());
-      return;
+    final apiLevel = await _smsService.getAndroidApiLevel();
+
+    // On Android 14+, SEND_SMS permission is not declared in manifest
+    // (to avoid Google Play Protect flagging). Only default SMS app can send.
+    // On older Android, we need the runtime SEND_SMS permission.
+    if (apiLevel < 34) {
+      final status = await Permission.sms.request();
+      if (!status.isGranted) {
+        emit(SendPermissionDenied());
+        return;
+      }
     }
 
     // Check if app is default SMS app (required on Android 14+)

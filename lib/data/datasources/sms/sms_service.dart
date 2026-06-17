@@ -8,6 +8,11 @@ class SmsService {
     return true;
   }
 
+  Future<int> getAndroidApiLevel() async {
+    final result = await _channel.invokeMethod<int>('getAndroidApiLevel');
+    return result ?? 0;
+  }
+
   Future<bool> isDefaultSmsApp() async {
     final result = await _channel.invokeMethod<bool>('isDefaultSmsApp');
     return result ?? true;
