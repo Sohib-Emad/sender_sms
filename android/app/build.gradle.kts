@@ -5,7 +5,7 @@ plugins {
 
 android {
     namespace = "com.school.sender_sms"
-    compileSdk = 34
+    compileSdk = 36
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
@@ -16,7 +16,7 @@ android {
     defaultConfig {
         applicationId = "com.school.sender_sms"
         minSdk = flutter.minSdkVersion
-        targetSdk = 34
+        targetSdk = 36
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }

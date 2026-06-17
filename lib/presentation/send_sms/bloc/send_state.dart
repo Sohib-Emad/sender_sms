@@ -11,6 +11,8 @@ class SendIdle extends SendState {}
 
 class SendRequestingPermission extends SendState {}
 
+class SendNotDefaultSmsApp extends SendState {}
+
 class SendPermissionDenied extends SendState {}
 
 class SendInProgress extends SendState {

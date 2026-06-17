@@ -6,6 +6,7 @@ import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_strings.dart';
 import '../../core/router/app_router.dart';
 import '../../core/utils/extensions.dart';
+import '../../domain/entities/sms_session.dart';
 import 'bloc/home_bloc.dart';
 import 'bloc/home_state.dart';
 
@@ -212,13 +213,24 @@ class HomeScreen extends StatelessWidget {
           children: [
             Expanded(
               child: _ActionCard(
+                title: 'إرسال يدوي',
+                subtitle: 'رقم واحد',
+                icon: Icons.sms_rounded,
+                gradient: const [Color(0xFF059669), Color(0xFF10B981)],
+                onTap: () => context.push(AppRouter.manualSms),
+                isSmall: true,
+              ).animate().slideX(begin: 0.3, duration: 400.ms, delay: 100.ms).fadeIn(),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _ActionCard(
                 title: AppStrings.viewHistory,
                 subtitle: 'السجل',
                 icon: Icons.history_rounded,
                 gradient: const [Color(0xFF334155), Color(0xFF475569)],
                 onTap: () => context.push(AppRouter.history),
                 isSmall: true,
-              ).animate().slideX(begin: 0.3, duration: 400.ms, delay: 100.ms).fadeIn(),
+              ).animate().slideX(begin: 0.3, duration: 400.ms, delay: 200.ms).fadeIn(),
             ),
           ],
         ),
@@ -364,37 +376,43 @@ class _ActionCard extends StatelessWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text(
-                    title,
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
-                    textDirection: TextDirection.rtl,
-                  ),
-                  if (!isSmall) ...[
-                    const SizedBox(height: 4),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
                     Text(
-                      subtitle,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Colors.white70,
+                      title,
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
                           ),
                       textDirection: TextDirection.rtl,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
+                    if (!isSmall) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        subtitle,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: Colors.white70,
+                            ),
+                        textDirection: TextDirection.rtl,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
                   ],
-                ],
+                ),
               ),
-              const SizedBox(width: 16),
+              const SizedBox(width: 12),
               Container(
-                padding: const EdgeInsets.all(12),
+                padding: EdgeInsets.all(isSmall ? 8 : 12),
                 decoration: BoxDecoration(
                   color: Colors.white.withOpacity(0.2),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(icon, color: Colors.white, size: isSmall ? 20 : 28),
+                child: Icon(icon, color: Colors.white, size: isSmall ? 18 : 24),
               ),
             ],
           ),
@@ -405,7 +423,7 @@ class _ActionCard extends StatelessWidget {
 }
 
 class _SessionCard extends StatelessWidget {
-  final dynamic session;
+  final SmsSession session;
   const _SessionCard({required this.session});
 
   @override

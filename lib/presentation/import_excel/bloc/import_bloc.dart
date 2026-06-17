@@ -46,7 +46,13 @@ class ImportBloc extends Bloc<ImportEvent, ImportState> {
         fileName: file.name,
       ));
     } catch (e) {
-      emit(ImportError(e.toString()));
+      final message = e.toString();
+      // Replace cryptic null errors with user-friendly message
+      if (message.contains('Null check') || message.contains('null value')) {
+        emit(const ImportError('تعذر قراءة الملف. تأكد من أن الملف بصيغة Excel صحيحة'));
+      } else {
+        emit(ImportError(message));
+      }
     }
   }
 

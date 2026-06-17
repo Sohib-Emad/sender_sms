@@ -75,6 +75,7 @@ class SendSmsBatchUseCase {
         success = await _smsService.sendSms(
           to: student.phone,
           message: message,
+          simSlot: settings.simSlot,
         );
         if (!success) error = 'فشل الإرسال';
       } catch (e) {

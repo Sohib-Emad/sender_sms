@@ -23,9 +23,8 @@ class SettingsScreen extends StatelessWidget {
       ),
       body: BlocBuilder<SettingsBloc, SettingsState>(
         builder: (context, state) {
-          final settings = state is SettingsLoaded
-              ? state.settings
-              : const AppSettings();
+          final settings =
+              state is SettingsLoaded ? state.settings : const AppSettings();
 
           return ListView(
             padding: const EdgeInsets.all(16),
@@ -56,7 +55,8 @@ class SettingsScreen extends StatelessWidget {
                           Row(
                             children: [
                               Text(AppStrings.delayBetween,
-                                  style: Theme.of(context).textTheme.titleMedium,
+                                  style:
+                                      Theme.of(context).textTheme.titleMedium,
                                   textDirection: TextDirection.rtl),
                               const SizedBox(width: 8),
                               const Icon(Icons.timer_rounded,
@@ -73,8 +73,7 @@ class SettingsScreen extends StatelessWidget {
                         label: '${settings.delaySeconds}s',
                         onChanged: (value) {
                           context.read<SettingsBloc>().add(SettingsSave(
-                                settings.copyWith(
-                                    delaySeconds: value.toInt()),
+                                settings.copyWith(delaySeconds: value.toInt()),
                               ));
                         },
                       ),
@@ -162,7 +161,8 @@ class SettingsScreen extends StatelessWidget {
                           Row(
                             children: [
                               Text(AppStrings.dailyLimit,
-                                  style: Theme.of(context).textTheme.titleMedium,
+                                  style:
+                                      Theme.of(context).textTheme.titleMedium,
                                   textDirection: TextDirection.rtl),
                               const SizedBox(width: 8),
                               const Icon(Icons.block_rounded,
@@ -193,8 +193,8 @@ class SettingsScreen extends StatelessWidget {
                           label: '${settings.dailyLimit}',
                           onChanged: (v) {
                             context.read<SettingsBloc>().add(
-                                  SettingsSave(settings.copyWith(
-                                      dailyLimit: v.toInt())),
+                                  SettingsSave(
+                                      settings.copyWith(dailyLimit: v.toInt())),
                                 );
                           },
                         ),
@@ -206,32 +206,6 @@ class SettingsScreen extends StatelessWidget {
 
               const SizedBox(height: 24),
               _SectionHeader(title: AppStrings.appSettings),
-              const SizedBox(height: 12),
-
-              // Dark mode
-              Card(
-                child: SwitchListTile(
-                  value: settings.isDarkMode,
-                  onChanged: (v) {
-                    context.read<SettingsBloc>().add(
-                          SettingsSave(settings.copyWith(isDarkMode: v)),
-                        );
-                  },
-                  title: Text(
-                    AppStrings.darkMode,
-                    textDirection: TextDirection.rtl,
-                  ),
-                  secondary: Icon(
-                    settings.isDarkMode
-                        ? Icons.dark_mode_rounded
-                        : Icons.light_mode_rounded,
-                    color: AppColors.primary,
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16, vertical: 4),
-                ),
-              ),
-
               const SizedBox(height: 12),
 
               // Language
@@ -258,7 +232,6 @@ class SettingsScreen extends StatelessWidget {
                           Expanded(
                             child: _LanguageButton(
                               label: AppStrings.english,
-                              flag: '🇺🇸',
                               isSelected: settings.language == 'en',
                               onTap: () => context.read<SettingsBloc>().add(
                                     SettingsSave(
@@ -270,7 +243,6 @@ class SettingsScreen extends StatelessWidget {
                           Expanded(
                             child: _LanguageButton(
                               label: AppStrings.arabic,
-                              flag: '🇸🇦',
                               isSelected: settings.language == 'ar',
                               onTap: () => context.read<SettingsBloc>().add(
                                     SettingsSave(
@@ -280,28 +252,6 @@ class SettingsScreen extends StatelessWidget {
                           ),
                         ],
                       ),
-                    ],
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 24),
-              _SectionHeader(title: AppStrings.about),
-              const SizedBox(height: 12),
-
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      _InfoRow(label: '1.0.0', title: AppStrings.version),
-                      const Divider(height: 20),
-                      _InfoRow(
-                          label: 'Flutter + BLoC + Hive',
-                          title: 'التقنية المستخدمة'),
-                      const Divider(height: 20),
-                      _InfoRow(label: '21+', title: 'الحد الأدنى لـ Android'),
                     ],
                   ),
                 ),
@@ -392,13 +342,11 @@ class _SimButton extends StatelessWidget {
 
 class _LanguageButton extends StatelessWidget {
   final String label;
-  final String flag;
   final bool isSelected;
   final VoidCallback onTap;
 
   const _LanguageButton({
     required this.label,
-    required this.flag,
     required this.isSelected,
     required this.onTap,
   });
@@ -422,14 +370,19 @@ class _LanguageButton extends StatelessWidget {
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Text(flag),
-            const SizedBox(width: 8),
-            Text(
-              label,
-              style: TextStyle(
-                color: isSelected ? Colors.white : AppColors.primary,
-                fontWeight: FontWeight.bold,
+            const SizedBox(width: 6),
+            Flexible(
+              child: Text(
+                label,
+                style: TextStyle(
+                  color: isSelected ? Colors.white : AppColors.primary,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 13,
+                ),
+                overflow: TextOverflow.ellipsis,
+                maxLines: 1,
               ),
             ),
           ],
@@ -439,30 +392,4 @@ class _LanguageButton extends StatelessWidget {
   }
 }
 
-class _InfoRow extends StatelessWidget {
-  final String title;
-  final String label;
 
-  const _InfoRow({required this.title, required this.label});
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          label,
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: AppColors.primary,
-                fontWeight: FontWeight.w500,
-              ),
-        ),
-        Text(
-          title,
-          style: Theme.of(context).textTheme.bodyMedium,
-          textDirection: TextDirection.rtl,
-        ),
-      ],
-    );
-  }
-}

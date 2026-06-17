@@ -4,12 +4,14 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:uuid/uuid.dart';
 import 'send_event.dart';
 import 'send_state.dart';
+import '../../../data/datasources/sms/sms_service.dart';
 import '../../../domain/entities/send_progress.dart';
 import '../../../domain/usecases/send_sms_batch_usecase.dart';
 import '../../../domain/repositories/settings_repository.dart';
 
 class SendBloc extends Bloc<SendEvent, SendState> {
   final SendSmsBatchUseCase _sendBatchUseCase;
+  final SmsService _smsService;
   final SettingsRepository _settingsRepository;
   static const _uuid = Uuid();
 
@@ -20,7 +22,7 @@ class SendBloc extends Bloc<SendEvent, SendState> {
   // Queue for paused mode
   final List<SendProgress> _pausedQueue = [];
 
-  SendBloc(this._sendBatchUseCase, this._settingsRepository)
+  SendBloc(this._sendBatchUseCase, this._smsService, this._settingsRepository)
       : super(SendIdle()) {
     on<SendStartBatch>(_onStart);
     on<SendPause>(_onPause);
@@ -36,6 +38,13 @@ class SendBloc extends Bloc<SendEvent, SendState> {
     final status = await Permission.sms.request();
     if (!status.isGranted) {
       emit(SendPermissionDenied());
+      return;
+    }
+
+    // Check if app is default SMS app (required on Android 14+)
+    final isDefault = await _smsService.isDefaultSmsApp();
+    if (!isDefault) {
+      emit(SendNotDefaultSmsApp());
       return;
     }
 

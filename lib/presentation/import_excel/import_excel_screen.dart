@@ -2,9 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:share_plus/share_plus.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_strings.dart';
 import '../../core/router/app_router.dart';
+import '../../core/utils/extensions.dart';
+import '../../data/datasources/excel/excel_service.dart';
 import 'bloc/import_bloc.dart';
 import 'bloc/import_event.dart';
 import 'bloc/import_state.dart';
@@ -148,6 +151,18 @@ class _ImportInitialContent extends StatelessWidget {
           ),
         ).animate().fadeIn(duration: 400.ms),
 
+        const SizedBox(height: 16),
+
+        // Download Template Button
+        SizedBox(
+          width: double.infinity,
+          child: OutlinedButton.icon(
+            onPressed: () => _downloadTemplate(context),
+            icon: const Icon(Icons.download_rounded),
+            label: const Text('تحميل نموذج Excel'),
+          ),
+        ),
+
         const SizedBox(height: 24),
 
         // Drop Zone
@@ -220,6 +235,21 @@ class _ImportInitialContent extends StatelessWidget {
       ],
     );
   }
+
+  Future<void> _downloadTemplate(BuildContext context) async {
+    try {
+      final path = await ExcelService.generateTemplate();
+      if (!context.mounted) return;
+      await Share.shareXFiles(
+        [XFile(path)],
+        subject: 'نموذج إرسال SMS',
+      );
+    } catch (e) {
+      if (context.mounted) {
+        context.showSnack('فشل تحميل النموذج: ${e.toString()}', isError: true);
+      }
+    }
+  }
 }
 
 class _ImportSuccessContent extends StatelessWidget {
@@ -242,37 +272,43 @@ class _ImportSuccessContent extends StatelessWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text(
-                    '${state.students.length} ${AppStrings.studentsFound}',
-                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
-                    textDirection: TextDirection.rtl,
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    state.fileName,
-                    style: Theme.of(context)
-                        .textTheme
-                        .bodySmall
-                        ?.copyWith(color: Colors.white70),
-                    textDirection: TextDirection.rtl,
-                  ),
-                ],
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      '${state.students.length} ${AppStrings.studentsFound}',
+                      style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
+                      textDirection: TextDirection.rtl,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      state.fileName,
+                      style: Theme.of(context)
+                          .textTheme
+                          .bodySmall
+                          ?.copyWith(color: Colors.white70),
+                      textDirection: TextDirection.rtl,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
               ),
-              const SizedBox(width: 16),
+              const SizedBox(width: 12),
               Container(
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
                   color: Colors.white.withOpacity(0.2),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Icon(Icons.check_circle_rounded,
-                    color: Colors.white, size: 32),
+                    color: Colors.white, size: 28),
               ),
             ],
           ),

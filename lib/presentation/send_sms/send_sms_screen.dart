@@ -6,10 +6,8 @@ import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_strings.dart';
 import '../../core/di/injection.dart';
 import '../../core/router/app_router.dart';
+import '../../data/datasources/sms/sms_service.dart';
 import '../../domain/entities/student.dart';
-import '../settings/bloc/settings_bloc.dart';
-import '../settings/bloc/settings_event.dart';
-import '../settings/bloc/settings_state.dart';
 import 'bloc/send_bloc.dart';
 import 'bloc/send_event.dart';
 import 'bloc/send_state.dart';
@@ -26,13 +24,8 @@ class SendSmsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MultiBlocProvider(
-      providers: [
-        BlocProvider.value(value: sl<SendBloc>()),
-        BlocProvider(
-          create: (_) => sl<SettingsBloc>()..add(SettingsLoad()),
-        ),
-      ],
+    return BlocProvider.value(
+      value: sl<SendBloc>(),
       child: _SendSmsBody(students: students, template: template),
     );
   }
@@ -97,6 +90,7 @@ class _SendSmsBody extends StatelessWidget {
                 ),
               );
             }
+
           },
           builder: (context, state) {
             return SafeArea(
@@ -123,6 +117,10 @@ class _SendSmsBody extends StatelessWidget {
 
     if (state is SendPermissionDenied) {
       return _buildPermissionError(context);
+    }
+
+    if (state is SendNotDefaultSmsApp) {
+      return _buildNotDefaultSmsApp(context);
     }
 
     if (state is SendInProgress || state is SendPaused) {
@@ -250,7 +248,7 @@ class _SendSmsBody extends StatelessWidget {
                       CircularProgressIndicator(
                         value: progress.progressPercent,
                         strokeWidth: 10,
-                        backgroundColor: AppColors.darkDivider,
+                        backgroundColor: const Color(0xFFE2E8F0),
                         valueColor: AlwaysStoppedAnimation<Color>(
                           isPaused ? AppColors.warning : AppColors.primary,
                         ),
@@ -422,6 +420,66 @@ class _SendSmsBody extends StatelessWidget {
     );
   }
 
+  Widget _buildNotDefaultSmsApp(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.sms_rounded, size: 80, color: AppColors.warning),
+          const SizedBox(height: 16),
+          const Text(
+            'تطبيق SMS افتراضي',
+            textDirection: TextDirection.rtl,
+            style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 12),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 24),
+            child: Text(
+              'على Android 14+ يجب جعل هذا التطبيق افتراضياً لإرسال SMS',
+              textDirection: TextDirection.rtl,
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 15),
+            ),
+          ),
+          const SizedBox(height: 8),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 24),
+            child: Text(
+              'الإعدادات ← التطبيقات ← التطبيقات الافتراضية ← تطبيق SMS',
+              textDirection: TextDirection.rtl,
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+            ),
+          ),
+          const SizedBox(height: 24),
+          ElevatedButton.icon(
+            onPressed: () {
+              sl<SmsService>().requestDefaultSmsApp();
+              context.read<SendBloc>().add(SendReset());
+            },
+            icon: const Icon(Icons.settings_rounded),
+            label: const Text('فتح الإعدادات'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
+            ),
+          ),
+          const SizedBox(height: 12),
+          TextButton(
+            onPressed: () {
+              context.read<SendBloc>().add(SendReset());
+            },
+            child: const Text('العودة', style: TextStyle(color: AppColors.textSecondary)),
+          ),
+        ],
+      ),
+    );
+  }
+
+
+
   Widget _buildControls(BuildContext context, SendState state) {
     if (state is SendIdle || state is SendRequestingPermission) {
       return Column(
@@ -433,13 +491,9 @@ class _SendSmsBody extends StatelessWidget {
               onPressed: state is SendRequestingPermission
                   ? null
                   : () {
-                      final settings =
-                          (context.read<SettingsBloc>().state as SettingsLoaded?)
-                              ?.settings;
                       context.read<SendBloc>().add(SendStartBatch(
                             students: students,
                             template: template,
-                            settings: settings!,
                           ));
                     },
               icon: const Icon(Icons.send_rounded),

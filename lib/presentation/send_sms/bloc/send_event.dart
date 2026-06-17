@@ -1,6 +1,5 @@
 import 'package:equatable/equatable.dart';
 import '../../../domain/entities/student.dart';
-import '../../../domain/entities/app_settings.dart';
 
 abstract class SendEvent extends Equatable {
   const SendEvent();
@@ -11,16 +10,14 @@ abstract class SendEvent extends Equatable {
 class SendStartBatch extends SendEvent {
   final List<Student> students;
   final String template;
-  final AppSettings settings;
 
   const SendStartBatch({
     required this.students,
     required this.template,
-    required this.settings,
   });
 
   @override
-  List<Object?> get props => [students, template, settings];
+  List<Object?> get props => [students, template];
 }
 
 class SendPause extends SendEvent {}

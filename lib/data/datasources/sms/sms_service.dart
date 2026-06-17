@@ -1,45 +1,57 @@
 import 'dart:async';
-import 'package:telephony/telephony.dart';
+import 'package:flutter/services.dart';
 
 class SmsService {
-  final Telephony _telephony = Telephony.instance;
+  static const _channel = MethodChannel('com.school.sender_sms/sms');
 
   Future<bool> requestPermissions() async {
-    final granted = await _telephony.requestPhoneAndSmsPermissions;
-    return granted ?? false;
+    return true;
   }
 
-  /// Send a single SMS and return true if successful
+  Future<bool> isDefaultSmsApp() async {
+    final result = await _channel.invokeMethod<bool>('isDefaultSmsApp');
+    return result ?? true;
+  }
+
+  Future<bool> requestDefaultSmsApp() async {
+    final result = await _channel.invokeMethod<bool>('requestDefaultSmsApp');
+    return result ?? false;
+  }
+
   Future<bool> sendSms({
     required String to,
     required String message,
     bool isMultipart = false,
+    int simSlot = 0,
   }) async {
     final completer = Completer<bool>();
 
     try {
-      await _telephony.sendSms(
-        to: to,
-        message: message,
-        isMultipart: isMultipart,
-        statusListener: (SendStatus status) {
-          if (!completer.isCompleted) {
-            completer.complete(status == SendStatus.SENT);
-          }
+      final result = await _channel.invokeMethod<Map<dynamic, dynamic>>(
+        'sendSms',
+        {
+          'phone': to,
+          'message': message,
+          'simSlot': simSlot,
         },
       );
 
-      // Wait max 30 seconds for delivery confirmation
-      return await completer.future.timeout(
-        const Duration(seconds: 30),
-        onTimeout: () {
-          if (!completer.isCompleted) completer.complete(true);
-          return true;
-        },
-      );
+      final success = result?['success'] == true;
+      if (!completer.isCompleted) {
+        completer.complete(success);
+      }
     } catch (e) {
-      if (!completer.isCompleted) completer.complete(false);
-      return false;
+      if (!completer.isCompleted) {
+        completer.complete(false);
+      }
     }
+
+    return completer.future.timeout(
+      const Duration(seconds: 32),
+      onTimeout: () {
+        if (!completer.isCompleted) completer.complete(true);
+        return true;
+      },
+    );
   }
 }

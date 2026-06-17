@@ -5,6 +5,8 @@ import 'package:go_router/go_router.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_strings.dart';
 import '../../core/router/app_router.dart';
+import '../../core/utils/extensions.dart';
+import '../../domain/entities/sms_session.dart';
 import 'bloc/history_bloc.dart';
 import 'bloc/history_state.dart';
 
@@ -77,7 +79,7 @@ class HistoryScreen extends StatelessWidget {
 }
 
 class _SessionCard extends StatelessWidget {
-  final dynamic session;
+  final SmsSession session;
   const _SessionCard({required this.session});
 
   @override

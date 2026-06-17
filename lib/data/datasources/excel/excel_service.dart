@@ -19,12 +19,15 @@ class ExcelService {
     List<Student> students = [];
 
     // Get first sheet
-    final sheetName = excel.tables.keys.first;
-    final sheet = excel.tables[sheetName]!;
+    final sheetNames = excel.sheets.keys.toList();
+    if (sheetNames.isEmpty) {
+      throw Exception('لم يتم العثور على أوراق في ملف Excel');
+    }
+    final sheet = excel[sheetNames.first];
     final rows = sheet.rows;
 
     if (rows.isEmpty) {
-      throw Exception('الملف فارغ');
+      throw Exception('ملف Excel فارغ - لا توجد بيانات');
     }
 
     // Detect header row
@@ -85,6 +88,55 @@ class ExcelService {
     if (col < 0 || col >= row.length) return '';
     final cell = row[col];
     return cell?.value?.toString().trim() ?? '';
+  }
+
+  /// Generate an empty template file with headers: name, phone, degree
+  static Future<String> generateTemplate() async {
+    final excel = Excel.createExcel();
+    final sheetName = excel.sheets.keys.first;
+    final sheet = excel[sheetName];
+
+    _setCell(sheet, 0, 0, 'name', _headerStyle(excel));
+    _setCell(sheet, 0, 1, 'phone', _headerStyle(excel));
+    _setCell(sheet, 0, 2, 'degree', _headerStyle(excel));
+
+    final sampleData = [
+      ['أحمد محمد', '201234567890', '95'],
+      ['سارة علي', '201098765432', '88'],
+      ['عمر خالد', '201112233445', '72'],
+      ['نور حسن', '201556677889', '91'],
+      ['يوسف إبراهيم', '201998877665', '65'],
+      ['مريم عبدالله', '201334455667', '100'],
+      ['خالد سليمان', '201776655443', '83'],
+      ['لينا عادل', '201223344556', '77'],
+      ['علي رضا', '201887766554', '69'],
+      ['هدى صالح', '201445566778', '94'],
+    ];
+    for (int i = 0; i < sampleData.length; i++) {
+      _setCell(sheet, i + 1, 0, sampleData[i][0], null);
+      _setCell(sheet, i + 1, 1, sampleData[i][1], null);
+      _setCell(sheet, i + 1, 2, sampleData[i][2], null);
+    }
+
+    final dir = await getApplicationDocumentsDirectory();
+    final fileName =
+        'SMS_Template_${DateFormat('yyyyMMdd_HHmmss').format(DateTime.now())}.xlsx';
+    final filePath = '${dir.path}/$fileName';
+
+    final fileBytes = excel.save();
+    if (fileBytes != null) {
+      File(filePath).writeAsBytesSync(fileBytes);
+    }
+
+    return filePath;
+  }
+
+  static CellStyle? _headerStyle(Excel excel) {
+    return CellStyle(
+      bold: true,
+      backgroundColorHex: ExcelColor.fromHexString('#1A73E8'),
+      fontColorHex: ExcelColor.fromHexString('#FFFFFF'),
+    );
   }
 
   /// Export session results to Excel and return file path

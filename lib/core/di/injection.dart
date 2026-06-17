@@ -51,7 +51,7 @@ Future<void> setupDependencies() async {
   sl.registerFactory(() => ImportBloc(sl()));
   sl.registerFactory(() => PreviewBloc(sl<StudentsRepository>()));
   sl.registerFactory(() => TemplateBloc(sl()));
-  sl.registerSingleton(SendBloc(sl(), sl()));
+  sl.registerSingleton(SendBloc(sl(), sl(), sl()));
   sl.registerFactory(() => HistoryBloc(sl(), sl()));
   sl.registerFactory(() => SettingsBloc(sl()));
 }
