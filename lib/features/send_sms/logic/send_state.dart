@@ -63,3 +63,11 @@ class SendGeneralError extends SendState {
   @override
   List<Object?> get props => [progress];
 }
+
+class SendFailedPendingRetry extends SendState {
+  final SendProgress progress;
+  final String errorMessage;
+  const SendFailedPendingRetry(this.progress, this.errorMessage);
+  @override
+  List<Object?> get props => [progress, errorMessage];
+}

@@ -9,6 +9,7 @@ import 'widgets/delay_settings_card.dart';
 import 'widgets/sim_settings_card.dart';
 import 'widgets/daily_limit_card.dart';
 import 'widgets/language_settings_card.dart';
+import 'widgets/default_sms_app_card.dart';
 import 'widgets/profile_card.dart';
 import 'widgets/logout_button.dart';
 
@@ -47,6 +48,8 @@ class SettingsPage extends StatelessWidget {
               DailyLimitCard(settings: settings),
               const SizedBox(height: 24),
               const SectionHeader(title: ScreenStrings.appSettings),
+              const SizedBox(height: 12),
+              const DefaultSmsAppCard(),
               const SizedBox(height: 12),
               LanguageSettingsCard(settings: settings),
               const SizedBox(height: 24),

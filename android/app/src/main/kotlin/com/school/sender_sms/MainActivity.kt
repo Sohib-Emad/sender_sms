@@ -1,7 +1,6 @@
 package com.school.sender_sms
 
 import android.Manifest
-import android.annotation.SuppressLint
 import android.app.Activity
 import android.app.PendingIntent
 import android.content.BroadcastReceiver
@@ -10,6 +9,8 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.os.Build
+import android.os.Handler
+import android.os.Looper
 import android.provider.Settings
 import android.telephony.SmsManager
 import android.telephony.SubscriptionManager
@@ -18,9 +19,16 @@ import androidx.core.app.ActivityCompat
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
+import java.util.UUID
 
 class MainActivity : FlutterActivity() {
+
     private val CHANNEL = "com.school.sender_sms/sms"
+    private val TAG = "SmsService"
+    private val REQUEST_DEFAULT_SMS = 1001
+
+    private val activeReceivers = mutableListOf<BroadcastReceiver>()
+    private var pendingResult: MethodChannel.Result? = null
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
@@ -35,43 +43,180 @@ class MainActivity : FlutterActivity() {
                     val simSlot = call.argument<Int>("simSlot") ?: 0
                     sendSms(phone, message, simSlot, result)
                 }
-                "isDefaultSmsApp" -> {
-                    result.success(isDefaultSmsApp())
-                }
+                "isDefaultSmsApp" -> result.success(isDefaultSmsApp())
                 "requestDefaultSmsApp" -> {
-                    openDefaultSmsSettings(result)
+                    pendingResult = result
+                    openDefaultSmsSettings()
                 }
-                "getAndroidApiLevel" -> {
-                    result.success(Build.VERSION.SDK_INT)
-                }
+                "getAndroidApiLevel" -> result.success(Build.VERSION.SDK_INT)
+                "isOplusDevice" -> result.success(isOplusDevice())
+                "getInboxMessages" -> getInboxMessages(result)
+                "getDevicePhoneNumber" -> getDevicePhoneNumber(result)
                 else -> result.notImplemented()
             }
         }
     }
 
-    private fun getSmsErrorString(resultCode: Int): String {
-        return when (resultCode) {
-            SmsManager.RESULT_ERROR_GENERIC_FAILURE -> "low_balance"
-            SmsManager.RESULT_ERROR_NO_SERVICE -> "RESULT_ERROR_NO_SERVICE"
-            SmsManager.RESULT_ERROR_NULL_PDU -> "RESULT_ERROR_NULL_PDU"
-            SmsManager.RESULT_ERROR_RADIO_OFF -> "RESULT_ERROR_RADIO_OFF"
-            SmsManager.RESULT_ERROR_LIMIT_EXCEEDED -> "RESULT_ERROR_LIMIT_EXCEEDED"
-            else -> "error_code_$resultCode"
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == REQUEST_DEFAULT_SMS) {
+            val isDefault = isDefaultSmsApp()
+            Log.d(TAG, "onActivityResult: isDefault=$isDefault, resultCode=$resultCode")
+            pendingResult?.success(isDefault)
+            pendingResult = null
         }
     }
 
-    @SuppressLint("MissingPermission")
+    override fun onDestroy() {
+        super.onDestroy()
+        activeReceivers.forEach {
+            try { unregisterReceiver(it) } catch (_: Exception) {}
+        }
+        activeReceivers.clear()
+        pendingResult = null
+    }
+
+    // ─────────────────────────────────────────
+    // Default SMS App
+    // ─────────────────────────────────────────
+
+    private fun isDefaultSmsApp(): Boolean {
+        return try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                val roleManager = getSystemService(Context.ROLE_SERVICE) as android.app.role.RoleManager
+                roleManager.isRoleHeld(android.app.role.RoleManager.ROLE_SMS)
+            } else {
+                val defaultPkg = Settings.Secure.getString(contentResolver, "sms_default_application")
+                packageName == defaultPkg
+            }
+        } catch (_: Exception) { false }
+    }
+
+    private fun isOplusDevice(): Boolean {
+        val manufacturer = Build.MANUFACTURER.lowercase()
+        val brand = Build.BRAND.lowercase()
+        return listOf("oppo", "realme", "oneplus", "oplus").any {
+            manufacturer.contains(it) || brand.contains(it)
+        }
+    }
+
+    private fun openDefaultSmsSettings() {
+        // Oppo/Realme/OnePlus بيرفض Role API - نجرب الإعدادات المباشرة الأول
+        if (isOplusDevice()) {
+            Log.d(TAG, "Oplus device detected, trying direct settings")
+            if (tryOplusDirectSettings()) return
+        }
+
+        // Android 10+ Role API
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            try {
+                val roleManager = getSystemService(Context.ROLE_SERVICE) as android.app.role.RoleManager
+                if (roleManager.isRoleHeld(android.app.role.RoleManager.ROLE_SMS)) {
+                    Log.d(TAG, "Already default SMS app")
+                    pendingResult?.success(true)
+                    pendingResult = null
+                    return
+                }
+                val intent = roleManager.createRequestRoleIntent(android.app.role.RoleManager.ROLE_SMS)
+                startActivityForResult(intent, REQUEST_DEFAULT_SMS)
+                Log.d(TAG, "Opened: roleRequest via startActivityForResult")
+                return
+            } catch (e: Exception) {
+                Log.e(TAG, "roleRequest failed: ${e.message}")
+            }
+        } else {
+            // Android 9 and below
+            try {
+                val intent = Intent("android.provider.Telephony.ACTION_CHANGE_DEFAULT").apply {
+                    putExtra("package", packageName)
+                }
+                startActivityForResult(intent, REQUEST_DEFAULT_SMS)
+                Log.d(TAG, "Opened: ACTION_CHANGE_DEFAULT")
+                return
+            } catch (e: Exception) {
+                Log.e(TAG, "ACTION_CHANGE_DEFAULT failed: ${e.message}")
+            }
+        }
+
+        // Fallback: Default Apps Settings
+        if (tryStart(Intent(Settings.ACTION_MANAGE_DEFAULT_APPS_SETTINGS), "defaultApps")) return
+
+        // Fallback: App Info Page
+        if (tryStart(
+                Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                    data = android.net.Uri.fromParts("package", packageName, null)
+                }, "appDetails"
+            )
+        ) return
+
+        Log.d(TAG, "All intents failed")
+        pendingResult?.success(false)
+        pendingResult = null
+    }
+
+    private fun tryOplusDirectSettings(): Boolean {
+        val attempts = listOf(
+            // 1: التطبيقات الافتراضية مباشرة
+            Intent(Settings.ACTION_MANAGE_DEFAULT_APPS_SETTINGS),
+
+            // 2: صفحة تفاصيل التطبيق (فيها زر "تعيين كافتراضي")
+            Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                data = android.net.Uri.fromParts("package", packageName, null)
+            },
+
+            // 3: ColorOS Default Apps Activity
+            Intent().apply {
+                setClassName(
+                    "com.android.settings",
+                    "com.android.settings.Settings\$DefaultAppSettingsActivity"
+                )
+            },
+
+            // 4: ColorOS newer
+            Intent("android.settings.MANAGE_DEFAULT_APPS_SETTINGS")
+        )
+
+        for (intent in attempts) {
+            try {
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+                if (intent.resolveActivity(packageManager) != null) {
+                    startActivityForResult(intent, REQUEST_DEFAULT_SMS)
+                    Log.d(TAG, "Opened Oplus settings: ${intent.action ?: intent.component?.className}")
+                    return true
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Oplus attempt failed: ${e.message}")
+            }
+        }
+        return false
+    }
+
+    private fun tryStart(intent: Intent, name: String): Boolean {
+        return try {
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+            if (intent.resolveActivity(packageManager) != null) {
+                startActivityForResult(intent, REQUEST_DEFAULT_SMS)
+                Log.d(TAG, "Opened: $name")
+                true
+            } else false
+        } catch (e: Exception) {
+            Log.e(TAG, "$name failed: ${e.message}")
+            false
+        }
+    }
+
+    // ─────────────────────────────────────────
+    // SMS Sending
+    // ─────────────────────────────────────────
+
     private fun sendSms(
         phone: String,
         message: String,
         simSlot: Int,
         result: MethodChannel.Result
     ) {
-        // On API 34+, default SMS app doesn't need SEND_SMS permission declared in manifest
-        // On API < 34, SEND_SMS runtime permission is required
-        val isDefault = isDefaultSmsApp()
-        if (!hasSmsPermission() && !isDefault) {
-            result.success(mapOf("success" to false, "error" to "الإذن مطلوب لإرسال الرسائل"))
+        if (!hasSmsPermission() && !isDefaultSmsApp()) {
+            result.success(mapOf("success" to false, "error" to "permission_denied"))
             return
         }
 
@@ -79,38 +224,35 @@ class MainActivity : FlutterActivity() {
             val smsManager = getSmsManagerForSlot(simSlot)
             val parts = smsManager.divideMessage(message)
             val numParts = parts.size
-            val sentAction = "SMS_SENT_${System.currentTimeMillis()}"
+            val sentAction = "SMS_SENT_${UUID.randomUUID()}"
 
             var receivedCount = 0
             var hasFailed = false
             var finalResultCode = Activity.RESULT_OK
             var isCompleted = false
 
-            val handler = android.os.Handler(android.os.Looper.getMainLooper())
+            val handler = Handler(Looper.getMainLooper())
             var timeoutRunnable: Runnable? = null
 
             val receiver = object : BroadcastReceiver() {
                 override fun onReceive(context: Context?, intent: Intent?) {
                     if (isCompleted) return
                     receivedCount++
-                    val code = resultCode
-                    if (code != Activity.RESULT_OK) {
+                    if (resultCode != Activity.RESULT_OK) {
                         hasFailed = true
-                        finalResultCode = code
+                        finalResultCode = resultCode
                     }
                     if (receivedCount >= numParts) {
                         isCompleted = true
                         timeoutRunnable?.let { handler.removeCallbacks(it) }
-                        try {
-                            unregisterReceiver(this)
-                        } catch (e: Exception) {
-                            Log.e("SmsService", "Error unregistering receiver: ${e.message}")
-                        }
-                        if (hasFailed) {
-                            result.success(mapOf("success" to false, "error" to getSmsErrorString(finalResultCode)))
+                        safeUnregister(this)
+                        val response = if (hasFailed) {
+                            mapOf("success" to false, "error" to getSmsErrorString(finalResultCode))
                         } else {
-                            result.success(mapOf("success" to true))
+                            showNotification("تم إرسال الرسالة", "تم إرسال الرسالة بنجاح إلى $phone")
+                            mapOf("success" to true)
                         }
+                        result.success(response)
                     }
                 }
             }
@@ -118,147 +260,218 @@ class MainActivity : FlutterActivity() {
             timeoutRunnable = Runnable {
                 if (!isCompleted) {
                     isCompleted = true
-                    try {
-                        unregisterReceiver(receiver)
-                    } catch (e: Exception) {
-                        Log.e("SmsService", "Error unregistering receiver on timeout: ${e.message}")
-                    }
+                    safeUnregister(receiver)
                     result.success(mapOf("success" to false, "error" to "timeout"))
                 }
             }
 
-            // Register the receiver
+            activeReceivers.add(receiver)
+
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                registerReceiver(receiver, IntentFilter(sentAction), Context.RECEIVER_NOT_EXPORTED)
+                registerReceiver(receiver, IntentFilter(sentAction), Context.RECEIVER_EXPORTED)
             } else {
                 registerReceiver(receiver, IntentFilter(sentAction))
             }
 
-            // Start 35 second fallback timeout
-            handler.postDelayed(timeoutRunnable, 35000)
+            handler.postDelayed(timeoutRunnable, 35_000)
 
-            if (parts.size > 1) {
+            if (numParts > 1) {
                 val sentIntents = parts.mapIndexed { index, _ ->
-                    val intent = Intent(sentAction).apply {
-                        putExtra("part_index", index)
-                    }
                     PendingIntent.getBroadcast(
                         this,
                         (System.currentTimeMillis() + index).toInt(),
-                        intent,
+                        Intent(sentAction).putExtra("part_index", index),
                         PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
                     )
                 }.toCollection(ArrayList())
                 smsManager.sendMultipartTextMessage(phone, null, parts, sentIntents, null)
             } else {
-                val intent = Intent(sentAction)
                 val sentIntent = PendingIntent.getBroadcast(
                     this,
                     System.currentTimeMillis().toInt(),
-                    intent,
+                    Intent(sentAction),
                     PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
                 )
                 smsManager.sendTextMessage(phone, null, message, sentIntent, null)
             }
+
         } catch (e: SecurityException) {
-            result.success(
-                mapOf(
-                    "success" to false,
-                    "error" to "ليس لديك صلاحية. اجعل التطبيق افتراضياً لإرسال SMS"
-                )
-            )
+            result.success(mapOf("success" to false, "error" to "permission_denied"))
         } catch (e: Exception) {
-            result.success(
-                mapOf("success" to false, "error" to (e.message ?: "فشل الإرسال"))
-            )
+            result.success(mapOf("success" to false, "error" to (e.message ?: "unknown_error")))
         }
     }
 
-    private fun isDefaultSmsApp(): Boolean {
-        return try {
-            val isDefault = if (Build.VERSION.SDK_INT >= 31) {
-                val roleManager = getSystemService(Context.ROLE_SERVICE) as android.app.role.RoleManager
-                roleManager.isRoleHeld(android.app.role.RoleManager.ROLE_SMS)
-            } else {
-                val defaultSms = Settings.Secure.getString(contentResolver, "sms_default_application")
-                packageName == defaultSms
-            }
-            isDefault
-        } catch (_: Exception) {
-            false
+    private fun getSmsErrorString(resultCode: Int): String {
+        return when (resultCode) {
+            SmsManager.RESULT_ERROR_GENERIC_FAILURE -> "low_balance"
+            SmsManager.RESULT_ERROR_NO_SERVICE      -> "no_service"
+            SmsManager.RESULT_ERROR_NULL_PDU        -> "null_pdu"
+            SmsManager.RESULT_ERROR_RADIO_OFF       -> "radio_off"
+            SmsManager.RESULT_ERROR_LIMIT_EXCEEDED  -> "limit_exceeded"
+            else -> "error_code_$resultCode"
         }
     }
 
-    private fun openDefaultSmsSettings(result: MethodChannel.Result) {
-        // Helper: start intent if an activity can handle it
-        fun tryStart(intent: Intent, name: String): Boolean {
-            val resolved = intent.resolveActivity(packageManager)
-            Log.d("SmsService", "tryStart($name): resolveActivity=${resolved != null}")
-            if (resolved != null) {
-                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
-                try {
-                    startActivity(intent)
-                    Log.d("SmsService", "tryStart($name): startActivity succeeded (no exception)")
-                    return true
-                } catch (e: Exception) {
-                    Log.e("SmsService", "tryStart($name): startActivity threw: ${e.message}")
-                }
-            }
-            return false
+    private fun safeUnregister(receiver: BroadcastReceiver) {
+        activeReceivers.remove(receiver)
+        try { unregisterReceiver(receiver) } catch (e: Exception) {
+            Log.e(TAG, "Error unregistering receiver: ${e.message}")
         }
-        // 1) Role request dialog (API 31+)
-        if (Build.VERSION.SDK_INT >= 31) {
-            try {
-                val roleManager = getSystemService(Context.ROLE_SERVICE) as android.app.role.RoleManager
-                if (tryStart(roleManager.createRequestRoleIntent(android.app.role.RoleManager.ROLE_SMS), "roleRequest")) {
-                    result.success(true); return
-                }
-            } catch (_: Exception) { Log.e("SmsService", "roleRequest exception, falling through") }
-        }
-        // 2) Default apps settings page
-        try {
-            if (tryStart(Intent(Settings.ACTION_MANAGE_DEFAULT_APPS_SETTINGS), "defaultApps")) {
-                result.success(true); return
-            }
-        } catch (_: Exception) { Log.e("SmsService", "defaultApps exception, falling through") }
-        // 3) App info page (has "Set as default" button on most devices)
-        try {
-            if (tryStart(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
-                data = android.net.Uri.fromParts("package", packageName, null)
-            }, "appDetails")) {
-                result.success(true); return
-            }
-        } catch (_: Exception) { Log.e("SmsService", "appDetails exception, falling through") }
-        // 4) Main settings page (user navigates manually)
-        try {
-            if (tryStart(Intent(Settings.ACTION_SETTINGS), "mainSettings")) {
-                result.success(true); return
-            }
-        } catch (_: Exception) { Log.e("SmsService", "mainSettings exception, falling through") }
-        Log.d("SmsService", "All intents failed, returning false")
-        result.success(false)
     }
+
+    // ─────────────────────────────────────────
+    // Helpers
+    // ─────────────────────────────────────────
 
     private fun getSmsManagerForSlot(simSlot: Int): SmsManager {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP_MR1) {
-            val subscriptionManager = getSystemService(Context.TELEPHONY_SUBSCRIPTION_SERVICE) as SubscriptionManager
+            val subscriptionManager =
+                getSystemService(Context.TELEPHONY_SUBSCRIPTION_SERVICE) as SubscriptionManager
             @Suppress("DEPRECATION")
-            val subscriptionInfos = subscriptionManager.activeSubscriptionInfoList
-            if (!subscriptionInfos.isNullOrEmpty() && simSlot < subscriptionInfos.size) {
-                return SmsManager.getSmsManagerForSubscriptionId(
-                    subscriptionInfos[simSlot].subscriptionId
-                )
+            val subs = subscriptionManager.activeSubscriptionInfoList
+            if (!subs.isNullOrEmpty() && simSlot < subs.size) {
+                return SmsManager.getSmsManagerForSubscriptionId(subs[simSlot].subscriptionId)
             }
         }
+        @Suppress("DEPRECATION")
         return SmsManager.getDefault()
     }
 
     private fun hasSmsPermission(): Boolean {
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             ActivityCompat.checkSelfPermission(
-                this,
-                Manifest.permission.SEND_SMS
+                this, Manifest.permission.SEND_SMS
             ) == PackageManager.PERMISSION_GRANTED
         } else true
+    }
+
+    private fun getInboxMessages(result: MethodChannel.Result) {
+        val hasReadPermission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            ActivityCompat.checkSelfPermission(
+                this, Manifest.permission.READ_SMS
+            ) == PackageManager.PERMISSION_GRANTED
+        } else true
+
+        if (!hasReadPermission && !isDefaultSmsApp()) {
+            result.error("PERMISSION_DENIED", "Read SMS permission is required", null)
+            return
+        }
+
+        val messages = mutableListOf<Map<String, Any>>()
+        val uri = android.net.Uri.parse("content://sms/inbox")
+        val projection = arrayOf("_id", "address", "body", "date")
+        
+        try {
+            val cursor = contentResolver.query(uri, projection, null, null, "date DESC")
+            cursor?.use { c ->
+                val addressIndex = c.getColumnIndex("address")
+                val bodyIndex = c.getColumnIndex("body")
+                val dateIndex = c.getColumnIndex("date")
+                
+                var count = 0
+                while (c.moveToNext() && count < 200) {
+                    val address = c.getString(addressIndex) ?: ""
+                    val body = c.getString(bodyIndex) ?: ""
+                    val date = c.getLong(dateIndex)
+                    
+                    messages.add(mapOf(
+                        "sender" to address,
+                        "body" to body,
+                        "timestamp" to date
+                    ))
+                    count++
+                }
+            }
+            result.success(messages)
+        } catch (e: Exception) {
+            result.error("ERROR", e.message ?: "Failed to read inbox", null)
+        }
+    }
+
+    private fun getDevicePhoneNumber(result: MethodChannel.Result) {
+        val hasNumbersPermission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            ActivityCompat.checkSelfPermission(
+                this, Manifest.permission.READ_PHONE_NUMBERS
+            ) == PackageManager.PERMISSION_GRANTED
+        } else true
+
+        val hasStatePermission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            ActivityCompat.checkSelfPermission(
+                this, Manifest.permission.READ_PHONE_STATE
+            ) == PackageManager.PERMISSION_GRANTED
+        } else true
+
+        val hasSmsPermission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            ActivityCompat.checkSelfPermission(
+                this, Manifest.permission.READ_SMS
+            ) == PackageManager.PERMISSION_GRANTED
+        } else true
+
+        if (!hasNumbersPermission && !hasStatePermission && !hasSmsPermission && !isDefaultSmsApp()) {
+            result.error("PERMISSION_DENIED", "Permission is required to read phone number", null)
+            return
+        }
+
+        try {
+            var phoneNumber: String? = null
+            
+            // Try SubscriptionManager (API 22+)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP_MR1) {
+                val subscriptionManager = getSystemService(Context.TELEPHONY_SUBSCRIPTION_SERVICE) as SubscriptionManager
+                @Suppress("DEPRECATION")
+                val activeInfos = subscriptionManager.activeSubscriptionInfoList
+                if (!activeInfos.isNullOrEmpty()) {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                        phoneNumber = subscriptionManager.getPhoneNumber(activeInfos[0].subscriptionId)
+                    } else {
+                        @Suppress("DEPRECATION")
+                        phoneNumber = activeInfos[0].number
+                    }
+                }
+            }
+            
+            // Fallback to TelephonyManager if SubscriptionManager failed or returned null/empty
+            if (phoneNumber.isNullOrEmpty()) {
+                val telephonyManager = getSystemService(Context.TELEPHONY_SERVICE) as android.telephony.TelephonyManager
+                @Suppress("DEPRECATION", "HardwareIds")
+                phoneNumber = telephonyManager.line1Number
+            }
+            
+            result.success(phoneNumber ?: "")
+        } catch (e: Exception) {
+            result.error("ERROR", e.message ?: "Failed to read phone number", null)
+        }
+    }
+
+    private fun showNotification(title: String, body: String) {
+        val channelId = "sms_notifications"
+        val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as android.app.NotificationManager
+
+        val builder = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel = android.app.NotificationChannel(
+                channelId,
+                "إشعارات الرسائل",
+                android.app.NotificationManager.IMPORTANCE_LOW
+            ).apply {
+                description = "إشعارات إرسال واستقبال رسائل SMS"
+            }
+            notificationManager.createNotificationChannel(channel)
+            android.app.Notification.Builder(this, channelId)
+        } else {
+            @Suppress("DEPRECATION")
+            android.app.Notification.Builder(this)
+        }
+
+        builder.setSmallIcon(android.R.drawable.ic_dialog_info)
+            .setContentTitle(title)
+            .setContentText(body)
+            .setAutoCancel(true)
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            builder.setColor(0xFF1B9016.toInt()) // AppColors.primary
+        }
+
+        notificationManager.notify(1002, builder.build())
     }
 }

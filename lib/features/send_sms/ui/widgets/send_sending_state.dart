@@ -26,12 +26,14 @@ class SendSendingState extends StatelessWidget {
                   height: 140,
                   child: Stack(
                     children: [
-                      CircularProgressIndicator(
-                        value: progress.progressPercent,
-                        strokeWidth: 10,
-                        backgroundColor: const Color(0xFFE2E8F0),
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                          isPaused ? AppColors.warning : AppColors.primary,
+                      SizedBox.expand(
+                        child: CircularProgressIndicator(
+                          value: progress.progressPercent,
+                          strokeWidth: 10,
+                          backgroundColor: const Color(0xFFE2E8F0),
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            isPaused ? AppColors.warning : AppColors.primary,
+                          ),
                         ),
                       ),
                       Center(

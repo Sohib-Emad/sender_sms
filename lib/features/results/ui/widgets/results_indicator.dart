@@ -40,11 +40,13 @@ class ResultsIndicator extends StatelessWidget {
             height: 120,
             child: Stack(
               children: [
-                CircularProgressIndicator(
-                  value: successRate / 100,
-                  strokeWidth: 10,
-                  backgroundColor: Colors.white24,
-                  valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
+                SizedBox.expand(
+                  child: CircularProgressIndicator(
+                    value: successRate / 100,
+                    strokeWidth: 10,
+                    backgroundColor: Colors.white24,
+                    valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
+                  ),
                 ),
                 Center(
                   child: Column(

@@ -41,7 +41,7 @@ class AppRouter {
         path: AppRoutes.home,
         builder: (c, s) => MultiBlocProvider(
           providers: [
-            BlocProvider(create: (_) => sl<HomeCubit>()..loadStats()),
+            BlocProvider.value(value: sl<HomeCubit>()..loadStats()),
             BlocProvider(create: (_) => sl<HistoryCubit>()..load()),
             BlocProvider(create: (_) => sl<SettingsCubit>()..load()),
           ],

@@ -25,11 +25,12 @@ class SendSmsBatchUseCase {
     required String sessionId,
     required bool Function() isPaused,
     required bool Function() isCancelled,
-    void Function()? onLowBalance,
+    required bool Function() shouldRetry,
+    required bool Function() shouldSkip,
+    required void Function(String error) onFailure,
   }) async* {
     int sent = 0, failed = 0;
-    bool cancelled = false, lowBalance = false, hasError = false;
-    String? errorMessage;
+    bool cancelled = false;
     List<LogEntry> recentLogs = [];
     final phonesContacted = <String>[];
 
@@ -42,57 +43,75 @@ class SendSmsBatchUseCase {
     yield SendProgress(total: students.length, sessionId: sessionId, isRunning: true);
 
     for (int i = 0; i < students.length; i++) {
-      if (isCancelled()) { cancelled = true; break; }
-      while (isPaused()) {
-        await Future.delayed(const Duration(milliseconds: 500));
-        if (isCancelled()) { cancelled = true; break; }
-      }
-      if (cancelled) break;
-
       final student = students[i];
       final message = template
           .replaceAll('{name}', student.name)
           .replaceAll('{degree}', student.degree)
           .replaceAll('{phone}', student.phone);
 
-      // إظهار "جارٍ إرسال" للطالب الحالي قبل الإرسال الفعلي
-      yield SendProgress(
-        total: students.length, sent: sent, failed: failed,
-        currentStudentName: student.name, currentPhone: student.phone,
-        isRunning: true, sessionId: sessionId, recentLogs: recentLogs,
-      );
-
-      final SmsResult result = await _smsService.sendSms(
-        to: student.phone, message: message, simSlot: settings.simSlot,
-      );
-
-      if (!result.success) {
-        failed++;
-        recentLogs = [
-          LogEntry(studentName: student.name, phone: student.phone,
-              success: false, error: result.errorMessage, time: DateTime.now()),
-          ...recentLogs.take(49),
-        ];
-        await _saveSmsLog(sessionId, student, message, result);
-
-        if (result.isLowBalance) {
-          lowBalance = true;
-          onLowBalance?.call();
-        } else {
-          hasError = true;
-          errorMessage = result.errorMessage ?? 'فشل إرسال الرسالة';
+      bool retry = false;
+      do {
+        retry = false;
+        if (isCancelled()) { cancelled = true; break; }
+        while (isPaused()) {
+          await Future.delayed(const Duration(milliseconds: 500));
+          if (isCancelled()) { cancelled = true; break; }
         }
-        break;
-      }
+        if (cancelled) break;
 
-      sent++;
-      phonesContacted.add(student.phone);
-      recentLogs = [
-        LogEntry(studentName: student.name, phone: student.phone,
-            success: true, time: DateTime.now()),
-        ...recentLogs.take(49),
-      ];
-      await _saveSmsLog(sessionId, student, message, result);
+        // إظهار "جارٍ إرسال" للطالب الحالي قبل الإرسال الفعلي
+        yield SendProgress(
+          total: students.length, sent: sent, failed: failed,
+          currentStudentName: student.name, currentPhone: student.phone,
+          isRunning: true, sessionId: sessionId, recentLogs: recentLogs,
+        );
+
+        final SmsResult result = await _smsService.sendSms(
+          to: student.phone, message: message, simSlot: settings.simSlot,
+        );
+
+        if (!result.success) {
+          // إرسال حالة الفشل الحالية لواجهة المستخدم وتفعيل الانتظار
+          yield SendProgress(
+            total: students.length, sent: sent, failed: failed,
+            currentStudentName: student.name, currentPhone: student.phone,
+            isRunning: true, sessionId: sessionId, recentLogs: recentLogs,
+            isError: true, errorMessage: result.errorMessage ?? 'فشل إرسال الرسالة',
+          );
+
+          onFailure(result.errorMessage ?? 'فشل إرسال الرسالة');
+
+          while (true) {
+            if (isCancelled()) { cancelled = true; break; }
+            if (shouldRetry()) {
+              retry = true;
+              break;
+            }
+            if (shouldSkip()) {
+              failed++;
+              recentLogs = [
+                LogEntry(studentName: student.name, phone: student.phone,
+                    success: false, error: result.errorMessage, time: DateTime.now()),
+                ...recentLogs.take(49),
+              ];
+              await _saveSmsLog(sessionId, student, message, result);
+              break;
+            }
+            await Future.delayed(const Duration(milliseconds: 200));
+          }
+        } else {
+          sent++;
+          phonesContacted.add(student.phone);
+          recentLogs = [
+            LogEntry(studentName: student.name, phone: student.phone,
+                success: true, time: DateTime.now()),
+            ...recentLogs.take(49),
+          ];
+          await _saveSmsLog(sessionId, student, message, result);
+        }
+      } while (retry);
+
+      if (cancelled) break;
 
       if (i < students.length - 1) {
         final delay = settings.delaySeconds > 0 ? settings.delaySeconds : 2.0;
@@ -100,7 +119,7 @@ class SendSmsBatchUseCase {
       }
     }
 
-    final status = lowBalance ? 'low_balance' : (hasError ? 'failed' : (cancelled ? 'cancelled' : 'completed'));
+    final status = cancelled ? 'cancelled' : 'completed';
     await _smsRepository.updateSession(session.copyWith(success: sent, failed: failed, status: status));
 
     // إرسال إحصائيات لـ Firebase في الخلفية (أرقام فقط)
@@ -113,9 +132,8 @@ class SendSmsBatchUseCase {
 
     yield SendProgress(
       total: students.length, sent: sent, failed: failed,
-      isCompleted: !cancelled && !lowBalance && !hasError,
-      isCancelled: cancelled, isLowBalance: lowBalance,
-      isError: hasError, errorMessage: errorMessage,
+      isCompleted: !cancelled,
+      isCancelled: cancelled,
       sessionId: sessionId, recentLogs: recentLogs,
     );
   }

@@ -27,7 +27,8 @@ class ResultsActions extends StatelessWidget {
             width: double.infinity,
             height: 52,
             child: ElevatedButton.icon(
-              onPressed: () => context.push(AppRoutes.failedMessages, extra: sessionId),
+              onPressed: () =>
+                  context.push(AppRoutes.failedMessages, extra: sessionId),
               icon: const Icon(Icons.warning_rounded),
               label: Text('عرض الفاشلين ($failed)'),
               style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
@@ -38,18 +39,16 @@ class ResultsActions extends StatelessWidget {
         Row(
           children: [
             Expanded(
-              child: OutlinedButton.icon(
+              child: OutlinedButton(
                 onPressed: () => ResultsHelper.handleShare(context, sessionId),
-                icon: const Icon(Icons.share_rounded, size: 18),
-                label: const Text('مشاركة التقرير'),
+                child: const Text('مشاركة التقرير'),
               ),
             ),
             const SizedBox(width: 12),
             Expanded(
-              child: OutlinedButton.icon(
+              child: OutlinedButton(
                 onPressed: () => ResultsHelper.handleExport(context, sessionId),
-                icon: const Icon(Icons.download_rounded, size: 18),
-                label: const Text('تصدير التقرير'),
+                child: const Text('تصدير التقرير'),
               ),
             ),
           ],

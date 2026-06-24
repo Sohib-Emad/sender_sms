@@ -16,6 +16,9 @@ class SendCubit extends Cubit<SendState> {
 
   bool _isPaused = false;
   bool _isCancelled = false;
+  bool _shouldRetry = false;
+  bool _shouldSkip = false;
+  bool _pendingRetry = false;
   SendProgress? _lastProgress;
 
   SendCubit(this._sendBatchUseCase, this._smsService, this._settingsRepository)
@@ -43,6 +46,9 @@ class SendCubit extends Cubit<SendState> {
 
       _isPaused = false;
       _isCancelled = false;
+      _shouldRetry = false;
+      _shouldSkip = false;
+      _pendingRetry = false;
       _lastProgress = null;
       final sessionId = _uuid.v4();
       final settings = await _settingsRepository.getSettings();
@@ -56,14 +62,29 @@ class SendCubit extends Cubit<SendState> {
         sessionId: sessionId,
         isPaused: () => _isPaused,
         isCancelled: () => _isCancelled,
-        onLowBalance: () => emit(SendLowBalance(_lastProgress ?? progress)),
+        shouldRetry: () {
+          if (_shouldRetry) {
+            _shouldRetry = false;
+            return true;
+          }
+          return false;
+        },
+        shouldSkip: () {
+          if (_shouldSkip) {
+            _shouldSkip = false;
+            return true;
+          }
+          return false;
+        },
+        onFailure: (error) {
+          _pendingRetry = true;
+          emit(SendFailedPendingRetry(_lastProgress ?? progress, error));
+        },
       )) {
         _lastProgress = p;
-        if (p.isLowBalance) {
-          emit(SendLowBalance(p));
-        } else if (p.isError) {
-          emit(SendGeneralError(p));
-        } else if (p.isCompleted) {
+        if (_pendingRetry) continue;
+
+        if (p.isCompleted) {
           emit(SendCompleted(p));
         } else if (p.isCancelled) {
           emit(SendCancelled(p));
@@ -92,10 +113,32 @@ class SendCubit extends Cubit<SendState> {
     }
   }
 
+  void retryFailed() {
+    if (state is SendFailedPendingRetry) {
+      _shouldRetry = true;
+      _pendingRetry = false;
+      emit(SendInProgress(_lastProgress ?? const SendProgress()));
+    }
+  }
+
+  void skipFailed() {
+    if (state is SendFailedPendingRetry) {
+      _shouldSkip = true;
+      _pendingRetry = false;
+      emit(SendInProgress(_lastProgress ?? const SendProgress()));
+    }
+  }
+
   void cancel() {
     _isCancelled = true;
+    _pendingRetry = false;
     emit(SendCancelled(_lastProgress ?? const SendProgress()));
   }
 
-  void reset() => emit(SendIdle());
+  void reset() {
+    _shouldRetry = false;
+    _shouldSkip = false;
+    _pendingRetry = false;
+    emit(SendIdle());
+  }
 }

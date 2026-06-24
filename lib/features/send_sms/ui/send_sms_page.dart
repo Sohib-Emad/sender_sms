@@ -98,8 +98,10 @@ class SendSmsPage extends StatelessWidget {
     if (state is SendCompleted) {
       return SendSendingState(progress: state.progress, isPaused: false);
     }
-    if (state is SendInProgress || state is SendPaused) {
-      final p = state is SendInProgress ? state.progress : (state as SendPaused).progress;
+    if (state is SendInProgress || state is SendPaused || state is SendFailedPendingRetry) {
+      final p = state is SendInProgress 
+          ? state.progress 
+          : (state is SendPaused ? state.progress : (state as SendFailedPendingRetry).progress);
       return SendSendingState(progress: p, isPaused: state is SendPaused);
     }
     if (state is SendCancelled) return SendCancelledState(progress: state.progress);

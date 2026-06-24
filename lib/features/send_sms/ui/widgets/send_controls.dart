@@ -34,20 +34,22 @@ class SendControls extends StatelessWidget {
         if (state is SendInProgress) {
           return Row(children: [
             Expanded(
-              child: OutlinedButton.icon(
+              child: OutlinedButton(
                 onPressed: () => _confirmCancel(context),
-                icon: const Icon(Icons.stop_rounded, color: AppColors.error),
-                label: const Text('إلغاء', style: TextStyle(color: AppColors.error)),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.error,
+                  side: const BorderSide(color: AppColors.error, width: 1.5),
+                ),
+                child: const Text('إلغاء'),
               ),
             ),
             const SizedBox(width: 12),
             Expanded(
               flex: 2,
-              child: ElevatedButton.icon(
+              child: ElevatedButton(
                 onPressed: () => context.read<SendCubit>().pause(),
-                icon: const Icon(Icons.pause_rounded),
-                label: const Text('إيقاف مؤقت'),
                 style: ElevatedButton.styleFrom(backgroundColor: AppColors.warning),
+                child: const Text('إيقاف مؤقت'),
               ),
             ),
           ]);
@@ -55,23 +57,80 @@ class SendControls extends StatelessWidget {
         if (state is SendPaused) {
           return Row(children: [
             Expanded(
-              child: OutlinedButton.icon(
+              child: OutlinedButton(
                 onPressed: () => _confirmCancel(context),
-                icon: const Icon(Icons.stop_rounded, color: AppColors.error),
-                label: const Text('إلغاء', style: TextStyle(color: AppColors.error)),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.error,
+                  side: const BorderSide(color: AppColors.error, width: 1.5),
+                ),
+                child: const Text('إلغاء'),
               ),
             ),
             const SizedBox(width: 12),
             Expanded(
               flex: 2,
-              child: ElevatedButton.icon(
+              child: ElevatedButton(
                 onPressed: () => context.read<SendCubit>().resume(),
-                icon: const Icon(Icons.play_arrow_rounded),
-                label: const Text('استكمال'),
                 style: ElevatedButton.styleFrom(backgroundColor: AppColors.success),
+                child: const Text('استكمال'),
               ),
             ),
           ]);
+        }
+        if (state is SendFailedPendingRetry) {
+          return Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                margin: const EdgeInsets.only(bottom: 12),
+                decoration: BoxDecoration(
+                  color: AppColors.error.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: AppColors.error.withValues(alpha: 0.3), width: 1),
+                ),
+                child: Text(
+                  'فشل الإرسال: ${_translateError(state.errorMessage)}\nاختر إجراء للاستكمال من حيث توقفت.',
+                  style: const TextStyle(color: AppColors.error, fontSize: 13, fontWeight: FontWeight.bold),
+                  textAlign: TextAlign.center,
+                  textDirection: TextDirection.rtl,
+                ),
+              ),
+              Row(children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () => _confirmCancel(context),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppColors.error,
+                      side: const BorderSide(color: AppColors.error, width: 1.5),
+                    ),
+                    child: const Text('إلغاء'),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () => context.read<SendCubit>().skipFailed(),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppColors.warning,
+                      side: const BorderSide(color: AppColors.warning, width: 1.5),
+                    ),
+                    child: const Text('تخطي'),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  flex: 2,
+                  child: ElevatedButton(
+                    onPressed: () => context.read<SendCubit>().retryFailed(),
+                    style: ElevatedButton.styleFrom(backgroundColor: AppColors.success),
+                    child: const Text('إعادة محاولة'),
+                  ),
+                ),
+              ]),
+            ],
+          );
         }
         if (state is SendCancelled) {
           return SizedBox(
@@ -98,5 +157,34 @@ class SendControls extends StatelessWidget {
         context.read<SendCubit>().cancel();
       }
     });
+  }
+
+  String _translateError(String error) {
+    if (error == 'low_balance') {
+      return 'رصيد الشريحة غير كافٍ لإرسال الرسالة.';
+    }
+    if (error == 'no_service') {
+      return 'لا توجد شبكة تغطية حالياً (No Service).';
+    }
+    if (error == 'radio_off') {
+      return 'الاتصال اللاسلكي مغلق (ربما وضع الطيران مفعل).';
+    }
+    if (error == 'null_pdu') {
+      return 'فشل توليد محتوى الرسالة (Null PDU).';
+    }
+    if (error == 'limit_exceeded') {
+      return 'تم تجاوز الحد الأقصى المسموح به لإرسال الرسائل.';
+    }
+    if (error == 'permission_denied') {
+      return 'صلاحية إرسال الرسائل (SMS Permission) مرفوضة.';
+    }
+    if (error == 'timeout') {
+      return 'انتهت مهلة محاولة الإرسال (Timeout).';
+    }
+    if (error.startsWith('error_code_')) {
+      final code = error.replaceFirst('error_code_', '');
+      return 'فشل بسبب كود خطأ أندرويد: $code';
+    }
+    return error;
   }
 }

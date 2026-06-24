@@ -111,27 +111,27 @@ class AppTheme {
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
         elevation: 0,
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(28),
+          borderRadius: BorderRadius.circular(14),
         ),
         textStyle: GoogleFonts.cairo(
-          fontSize: 16,
-          fontWeight: FontWeight.w600,
+          fontSize: 12.5,
+          fontWeight: FontWeight.w700,
         ),
       ),
     ),
     outlinedButtonTheme: OutlinedButtonThemeData(
       style: OutlinedButton.styleFrom(
         foregroundColor: AppColors.primary,
-        side: const BorderSide(color: AppColors.primary),
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+        side: const BorderSide(color: AppColors.primary, width: 1.5),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(28),
+          borderRadius: BorderRadius.circular(14),
         ),
         textStyle: GoogleFonts.cairo(
-          fontSize: 16,
-          fontWeight: FontWeight.w600,
+          fontSize: 12.5,
+          fontWeight: FontWeight.w700,
         ),
       ),
     ),
@@ -154,8 +154,7 @@ class AppTheme {
         borderRadius: BorderRadius.circular(24),
         borderSide: const BorderSide(color: AppColors.error),
       ),
-      contentPadding:
-          const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       hintStyle: GoogleFonts.cairo(
         color: AppColors.textHint,
         fontSize: 14,

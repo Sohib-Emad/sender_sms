@@ -6,6 +6,7 @@ import 'package:sender_sms/features/auth/logic/auth_cubit.dart';
 import 'package:sender_sms/features/auth/logic/auth_state.dart';
 import 'package:sender_sms/features/home/logic/home_cubit.dart';
 import 'widgets/home_app_bar.dart';
+import 'widgets/default_sms_banner.dart';
 import 'widgets/home_stats_section.dart';
 import 'widgets/home_actions_section.dart';
 import 'widgets/home_recent_section.dart';
@@ -40,6 +41,7 @@ class HomePage extends StatelessWidget {
                     padding: const EdgeInsets.all(16),
                     sliver: SliverList(
                       delegate: SliverChildListDelegate([
+                        const DefaultSmsBanner(),
                         const HomeActionsSection(),
                         const SizedBox(height: 24),
                         HomeStatsSection(state: state),

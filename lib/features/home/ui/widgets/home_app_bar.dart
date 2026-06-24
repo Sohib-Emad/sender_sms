@@ -63,13 +63,6 @@ class HomeAppBar extends StatelessWidget {
               ),
             ],
           ),
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.logout_rounded, color: AppColors.textPrimary, size: 22),
-              onPressed: () => context.read<AuthCubit>().signOut(),
-              tooltip: 'تسجيل الخروج',
-            ),
-          ],
         );
       },
     );

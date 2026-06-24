@@ -15,14 +15,15 @@ class CustomBottomNavBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final items = [
       _NavBarItem(icon: Icons.home_rounded, label: 'الرئيسية'),
+      _NavBarItem(icon: Icons.inbox_rounded, label: 'الواردة'),
       _NavBarItem(icon: Icons.calendar_today_rounded, label: 'السجل'),
       _NavBarItem(icon: Icons.chat_bubble_rounded, label: 'إرسال يدوي'),
       _NavBarItem(icon: Icons.person_rounded, label: 'الإعدادات'),
     ];
 
     return Container(
-      margin: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+      margin: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(36),
@@ -46,7 +47,7 @@ class CustomBottomNavBar extends StatelessWidget {
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 250),
               curve: Curves.easeInOut,
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
                 color: isSelected ? AppColors.primary : Colors.transparent,
                 shape: BoxShape.circle,

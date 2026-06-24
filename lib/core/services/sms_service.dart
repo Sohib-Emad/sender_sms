@@ -64,4 +64,23 @@ class SmsService {
       );
     }
   }
+
+  Future<List<Map<String, dynamic>>> getInboxMessages() async {
+    try {
+      final List<dynamic>? rawList = await _channel.invokeMethod<List<dynamic>>('getInboxMessages');
+      if (rawList == null) return [];
+      return rawList.map((item) => Map<String, dynamic>.from(item as Map)).toList();
+    } catch (e) {
+      return [];
+    }
+  }
+
+  Future<String> getDevicePhoneNumber() async {
+    try {
+      final String? number = await _channel.invokeMethod<String>('getDevicePhoneNumber');
+      return number ?? '';
+    } catch (e) {
+      return '';
+    }
+  }
 }
