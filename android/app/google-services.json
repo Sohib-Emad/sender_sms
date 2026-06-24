@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "325188598280",
+    "project_id": "sender-sms-cde6b",
+    "storage_bucket": "sender-sms-cde6b.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:325188598280:android:b54748e35159c6b224afbd",
+        "android_client_info": {
+          "package_name": "com.school.sender_sms"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCneG9fgcpNA1y3NN_lKqzjt_hXIp1LiJA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

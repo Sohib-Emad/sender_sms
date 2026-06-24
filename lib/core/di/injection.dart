@@ -1,33 +1,42 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:get_it/get_it.dart';
-import '../../data/datasources/local/hive_datasource.dart';
-import '../../data/datasources/sms/sms_service.dart';
-import '../../data/repositories/settings_repository_impl.dart';
-import '../../data/repositories/sms_repository_impl.dart';
-import '../../data/repositories/students_repository_impl.dart';
-import '../../domain/repositories/settings_repository.dart';
-import '../../domain/repositories/sms_repository.dart';
-import '../../domain/repositories/students_repository.dart';
-import '../../domain/usecases/export_report_usecase.dart';
-import '../../domain/usecases/get_sessions_usecase.dart';
-import '../../domain/usecases/import_excel_usecase.dart';
-import '../../domain/usecases/send_sms_batch_usecase.dart';
-import '../../presentation/home/bloc/home_bloc.dart';
-import '../../presentation/import_excel/bloc/import_bloc.dart';
-import '../../presentation/data_preview/bloc/preview_bloc.dart';
-import '../../presentation/message_template/bloc/template_bloc.dart';
-import '../../presentation/send_sms/bloc/send_bloc.dart';
-import '../../presentation/history/bloc/history_bloc.dart';
-import '../../presentation/settings/bloc/settings_bloc.dart';
+import 'package:sender_sms/core/services/firebase_reporting_service.dart';
+import 'package:sender_sms/core/services/hive_datasource.dart';
+import 'package:sender_sms/core/services/sms_service.dart';
+import 'package:sender_sms/features/auth/data/repos/auth_repository.dart';
+import 'package:sender_sms/features/auth/logic/auth_cubit.dart';
+import 'package:sender_sms/features/import_excel/data/repos/students_repository.dart';
+import 'package:sender_sms/features/history/data/repos/sms_repository.dart';
+import 'package:sender_sms/features/settings/data/repos/settings_repository.dart';
+import 'package:sender_sms/features/send_sms/logic/send_sms_batch_usecase.dart';
+import 'package:sender_sms/features/home/logic/home_cubit.dart';
+import 'package:sender_sms/features/import_excel/logic/import_cubit.dart';
+import 'package:sender_sms/features/data_preview/logic/preview_cubit.dart';
+import 'package:sender_sms/features/message_template/logic/template_cubit.dart';
+import 'package:sender_sms/features/send_sms/logic/send_cubit.dart';
+import 'package:sender_sms/features/history/logic/history_cubit.dart';
+import 'package:sender_sms/features/settings/logic/settings_cubit.dart';
+import 'package:sender_sms/features/failed_messages/logic/failed_cubit.dart';
+import 'package:sender_sms/features/admin_dashboard/logic/admin_dashboard_cubit.dart';
 
 final sl = GetIt.instance;
 
 Future<void> setupDependencies() async {
-  // ── Datasources ──────────────────────────────────────
+  // ── Firebase ──────────────────────────────────────────
+  sl.registerLazySingleton<FirebaseAuth>(() => FirebaseAuth.instance);
+  sl.registerLazySingleton<FirebaseFirestore>(() => FirebaseFirestore.instance);
+
+  // ── Datasources ───────────────────────────────────────
   final hiveDatasource = HiveDatasource();
   sl.registerSingleton<HiveDatasource>(hiveDatasource);
   sl.registerLazySingleton<SmsService>(() => SmsService());
+  sl.registerLazySingleton(() => FirebaseReportingService(sl(), sl()));
 
-  // ── Repositories ─────────────────────────────────────
+  // ── Repositories ──────────────────────────────────────
+  sl.registerLazySingleton<AuthRepository>(
+    () => AuthRepositoryImpl(sl(), sl()),
+  );
   sl.registerLazySingleton<StudentsRepository>(
     () => StudentsRepositoryImpl(sl()),
   );
@@ -39,19 +48,17 @@ Future<void> setupDependencies() async {
   );
 
   // ── Use Cases ─────────────────────────────────────────
-  sl.registerLazySingleton(() => ImportExcelUseCase());
-  sl.registerLazySingleton(() => SendSmsBatchUseCase(sl(), sl()));
-  sl.registerLazySingleton(() => GetSessionsUseCase(sl()));
-  sl.registerLazySingleton(() => GetSessionLogsUseCase(sl()));
-  sl.registerLazySingleton(() => GetFailedLogsUseCase(sl()));
-  sl.registerLazySingleton(() => ExportReportUseCase(sl()));
+  sl.registerLazySingleton(() => SendSmsBatchUseCase(sl(), sl(), sl()));
 
-  // ── BLoCs ─────────────────────────────────────────────
-  sl.registerLazySingleton(() => HomeBloc(sl(), sl()));
-  sl.registerFactory(() => ImportBloc(sl()));
-  sl.registerFactory(() => PreviewBloc(sl<StudentsRepository>()));
-  sl.registerFactory(() => TemplateBloc(sl()));
-  sl.registerSingleton(SendBloc(sl(), sl(), sl()));
-  sl.registerFactory(() => HistoryBloc(sl(), sl()));
-  sl.registerFactory(() => SettingsBloc(sl()));
+  // ── Cubits ────────────────────────────────────────────
+  sl.registerLazySingleton(() => AuthCubit(sl()));
+  sl.registerLazySingleton(() => HomeCubit(sl(), sl()));
+  sl.registerFactory(() => ImportCubit());
+  sl.registerFactory(() => PreviewCubit());
+  sl.registerFactory(() => TemplateCubit(sl()));
+  sl.registerSingleton(SendCubit(sl(), sl(), sl()));
+  sl.registerFactory(() => HistoryCubit(sl()));
+  sl.registerFactory(() => SettingsCubit(sl()));
+  sl.registerFactory(() => FailedCubit(sl(), sl(), sl()));
+  sl.registerFactory(() => AdminDashboardCubit(sl()));
 }

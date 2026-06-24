@@ -1,0 +1,25 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // دالة للتحقق مما إذا كان المستخدم الحالي مسؤولاً (Admin)
+    function isAdmin() {
+      return request.auth != null && 
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+    }
+
+    match /users/{uid} {
+      // السماح لأي مستخدم مسجل بالدخول بقراءة قائمة المستخدمين أو المستندات
+      allow read: if request.auth != null;
+
+      // السماح بالكتابة للمستخدم على مستنده الخاص، أو للمسؤول على أي مستند
+      allow write: if (request.auth != null && request.auth.uid == uid) || isAdmin();
+
+      // الجلسات الخاصة بكل مستخدم
+      match /sessions/{sessionId} {
+        allow read, write: if (request.auth != null && request.auth.uid == uid) || isAdmin();
+      }
+    }
+  }
+}

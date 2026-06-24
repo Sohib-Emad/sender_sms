@@ -1,5 +1,8 @@
 plugins {
     id("com.android.application")
+    // START: FlutterFire Configuration
+    id("com.google.gms.google-services")
+    // END: FlutterFire Configuration
     id("dev.flutter.flutter-gradle-plugin")
 }
 
@@ -16,7 +19,7 @@ android {
     defaultConfig {
         applicationId = "com.school.sender_sms"
         minSdk = flutter.minSdkVersion
-        targetSdk = 36
+        targetSdk = 33
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }

@@ -1,9 +1,13 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- SMS Permissions (SEND only - no READ needed) -->
-    <!-- maxSdkVersion=33: prevents Google Play Protect flagging on Android 14+ -->
+    <!-- SMS Permissions -->
     <!-- On Android 14+, only the default SMS app can use SmsManager directly -->
-    <uses-permission android:name="android.permission.SEND_SMS" android:maxSdkVersion="33"/>
+    <!-- RECEIVE_SMS, READ_SMS, RECEIVE_MMS, WRITE_SMS are required for default SMS app eligibility -->
+    <uses-permission android:name="android.permission.SEND_SMS"/>
+    <uses-permission android:name="android.permission.RECEIVE_SMS"/>
+    <uses-permission android:name="android.permission.READ_SMS"/>
+    <uses-permission android:name="android.permission.RECEIVE_MMS"/>
+    <uses-permission android:name="android.permission.WRITE_SMS"/>
     <uses-permission android:name="android.permission.READ_PHONE_STATE" android:maxSdkVersion="32"/>
     <uses-permission android:name="android.permission.READ_PHONE_NUMBERS" android:maxSdkVersion="32"/>
 
@@ -39,6 +43,23 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
+        <receiver
+            android:name=".SmsReceiver"
+            android:exported="true"
+            android:permission="android.permission.BROADCAST_SMS">
+            <intent-filter>
+                <action android:name="android.provider.Telephony.SMS_DELIVER" />
+            </intent-filter>
+        </receiver>
+        <receiver
+            android:name=".MmsReceiver"
+            android:exported="true"
+            android:permission="android.permission.BROADCAST_WAP_PUSH">
+            <intent-filter>
+                <action android:name="android.provider.Telephony.WAP_PUSH_DELIVER" />
+                <data android:mimeType="application/vnd.wap.mms-message" />
+            </intent-filter>
+        </receiver>
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
@@ -49,5 +70,11 @@
             <action android:name="android.intent.action.PROCESS_TEXT"/>
             <data android:mimeType="text/plain"/>
         </intent>
+        <intent>
+            <action android:name="android.intent.action.SENDTO" />
+            <data android:scheme="smsto" />
+        </intent>
+        <package android:name="com.android.mms" />
+        <package android:name="com.android.phone" />
     </queries>
 </manifest>

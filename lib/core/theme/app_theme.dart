@@ -113,7 +113,7 @@ class AppTheme {
         elevation: 0,
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(28),
         ),
         textStyle: GoogleFonts.cairo(
           fontSize: 16,
@@ -127,7 +127,7 @@ class AppTheme {
         side: const BorderSide(color: AppColors.primary),
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(28),
         ),
         textStyle: GoogleFonts.cairo(
           fontSize: 16,
@@ -139,23 +139,23 @@ class AppTheme {
       filled: true,
       fillColor: Colors.white,
       border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+        borderRadius: BorderRadius.circular(24),
+        borderSide: const BorderSide(color: Colors.transparent),
       ),
       enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+        borderRadius: BorderRadius.circular(24),
+        borderSide: const BorderSide(color: Colors.transparent),
       ),
       focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: AppColors.primary, width: 2),
+        borderRadius: BorderRadius.circular(24),
+        borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
       ),
       errorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(24),
         borderSide: const BorderSide(color: AppColors.error),
       ),
       contentPadding:
-          const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       hintStyle: GoogleFonts.cairo(
         color: AppColors.textHint,
         fontSize: 14,
@@ -166,10 +166,10 @@ class AppTheme {
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        side: const BorderSide(color: Color(0xFFE2E8F0)),
+        side: const BorderSide(color: Color(0xFFF1F5F9)),
       ),
     ),
-    dividerColor: const Color(0xFFE2E8F0),
+    dividerColor: const Color(0xFFF1F5F9),
     floatingActionButtonTheme: const FloatingActionButtonThemeData(
       backgroundColor: AppColors.primary,
       foregroundColor: Colors.white,
