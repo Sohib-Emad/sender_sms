@@ -55,7 +55,14 @@ kotlin {
         jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17
     }
 }
+dependencies {
+    implementation("com.google.android.play:core:1.10.3")
+}
 
 flutter {
     source = "../.."
+}
+
+configurations.all {
+    exclude(group = "com.google.android.play", module = "core")
 }

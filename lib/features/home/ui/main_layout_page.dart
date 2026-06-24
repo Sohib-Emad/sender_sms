@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:sender_sms/features/home/ui/home_page.dart';
 import 'package:sender_sms/features/inbox/ui/inbox_page.dart';
 import 'package:sender_sms/features/history/ui/history_page.dart';
@@ -24,9 +25,14 @@ class _MainLayoutPageState extends State<MainLayoutPage> {
   @override
   void initState() {
     super.initState();
+    _requestNotificationPermission();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       PhoneConfirmationDialog.show(context);
     });
+  }
+
+  Future<void> _requestNotificationPermission() async {
+    await Permission.notification.request();
   }
 
   void setTab(int index) {
