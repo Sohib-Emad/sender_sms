@@ -29,6 +29,7 @@ class MainActivity : FlutterActivity() {
 
     private val activeReceivers = mutableListOf<BroadcastReceiver>()
     private var pendingResult: MethodChannel.Result? = null
+    private val requestCodeGenerator = java.util.concurrent.atomic.AtomicInteger(0)
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
@@ -277,20 +278,27 @@ class MainActivity : FlutterActivity() {
 
             if (numParts > 1) {
                 val sentIntents = parts.mapIndexed { index, _ ->
+                    val intent = Intent(sentAction).apply {
+                        setPackage(packageName)
+                        putExtra("part_index", index)
+                    }
                     PendingIntent.getBroadcast(
                         this,
-                        (System.currentTimeMillis() + index).toInt(),
-                        Intent(sentAction).putExtra("part_index", index),
-                        PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+                        requestCodeGenerator.incrementAndGet(),
+                        intent,
+                        PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
                     )
                 }.toCollection(ArrayList())
                 smsManager.sendMultipartTextMessage(phone, null, parts, sentIntents, null)
             } else {
+                val intent = Intent(sentAction).apply {
+                    setPackage(packageName)
+                }
                 val sentIntent = PendingIntent.getBroadcast(
                     this,
-                    System.currentTimeMillis().toInt(),
-                    Intent(sentAction),
-                    PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+                    requestCodeGenerator.incrementAndGet(),
+                    intent,
+                    PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
                 )
                 smsManager.sendTextMessage(phone, null, message, sentIntent, null)
             }
@@ -304,7 +312,7 @@ class MainActivity : FlutterActivity() {
 
     private fun getSmsErrorString(resultCode: Int): String {
         return when (resultCode) {
-            SmsManager.RESULT_ERROR_GENERIC_FAILURE -> "low_balance"
+            SmsManager.RESULT_ERROR_GENERIC_FAILURE -> "generic_failure"
             SmsManager.RESULT_ERROR_NO_SERVICE      -> "no_service"
             SmsManager.RESULT_ERROR_NULL_PDU        -> "null_pdu"
             SmsManager.RESULT_ERROR_RADIO_OFF       -> "radio_off"
@@ -331,11 +339,22 @@ class MainActivity : FlutterActivity() {
             @Suppress("DEPRECATION")
             val subs = subscriptionManager.activeSubscriptionInfoList
             if (!subs.isNullOrEmpty() && simSlot < subs.size) {
-                return SmsManager.getSmsManagerForSubscriptionId(subs[simSlot].subscriptionId)
+                val subId = subs[simSlot].subscriptionId
+                return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    val baseSmsManager = getSystemService(SmsManager::class.java)
+                    baseSmsManager?.createForSubscriptionId(subId) ?: getSystemService(SmsManager::class.java)
+                } else {
+                    @Suppress("DEPRECATION")
+                    SmsManager.getSmsManagerForSubscriptionId(subId)
+                }
             }
         }
-        @Suppress("DEPRECATION")
-        return SmsManager.getDefault()
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            getSystemService(SmsManager::class.java)
+        } else {
+            @Suppress("DEPRECATION")
+            SmsManager.getDefault()
+        }
     }
 
     private fun hasSmsPermission(): Boolean {

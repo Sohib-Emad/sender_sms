@@ -71,33 +71,43 @@ class SendSmsBatchUseCase {
         );
 
         if (!result.success) {
-          // إرسال حالة الفشل الحالية لواجهة المستخدم وتفعيل الانتظار
-          yield SendProgress(
-            total: students.length, sent: sent, failed: failed,
-            currentStudentName: student.name, currentPhone: student.phone,
-            isRunning: true, sessionId: sessionId, recentLogs: recentLogs,
-            isError: true, errorMessage: result.errorMessage ?? 'فشل إرسال الرسالة',
-          );
+          if (settings.autoSkipFailed) {
+            failed++;
+            recentLogs = [
+              LogEntry(studentName: student.name, phone: student.phone,
+                  success: false, error: result.errorMessage, time: DateTime.now()),
+              ...recentLogs.take(49),
+            ];
+            await _saveSmsLog(sessionId, student, message, result);
+          } else {
+            // إرسال حالة الفشل الحالية لواجهة المستخدم وتفعيل الانتظار
+            yield SendProgress(
+              total: students.length, sent: sent, failed: failed,
+              currentStudentName: student.name, currentPhone: student.phone,
+              isRunning: true, sessionId: sessionId, recentLogs: recentLogs,
+              isError: true, errorMessage: result.errorMessage ?? 'فشل إرسال الرسالة',
+            );
 
-          onFailure(result.errorMessage ?? 'فشل إرسال الرسالة');
+            onFailure(result.errorMessage ?? 'فشل إرسال الرسالة');
 
-          while (true) {
-            if (isCancelled()) { cancelled = true; break; }
-            if (shouldRetry()) {
-              retry = true;
-              break;
+            while (true) {
+              if (isCancelled()) { cancelled = true; break; }
+              if (shouldRetry()) {
+                retry = true;
+                break;
+              }
+              if (shouldSkip()) {
+                failed++;
+                recentLogs = [
+                  LogEntry(studentName: student.name, phone: student.phone,
+                      success: false, error: result.errorMessage, time: DateTime.now()),
+                  ...recentLogs.take(49),
+                ];
+                await _saveSmsLog(sessionId, student, message, result);
+                break;
+              }
+              await Future.delayed(const Duration(milliseconds: 200));
             }
-            if (shouldSkip()) {
-              failed++;
-              recentLogs = [
-                LogEntry(studentName: student.name, phone: student.phone,
-                    success: false, error: result.errorMessage, time: DateTime.now()),
-                ...recentLogs.take(49),
-              ];
-              await _saveSmsLog(sessionId, student, message, result);
-              break;
-            }
-            await Future.delayed(const Duration(milliseconds: 200));
           }
         } else {
           sent++;

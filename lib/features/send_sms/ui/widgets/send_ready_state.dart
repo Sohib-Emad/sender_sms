@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:sender_sms/core/constants/app_colors.dart';
 import 'package:sender_sms/core/constants/screen_strings.dart';
 import 'package:sender_sms/features/import_excel/data/models/student.dart';
+import 'package:sender_sms/features/settings/logic/settings_cubit.dart';
 
 class SendReadyState extends StatelessWidget {
   final List<Student> students;
@@ -87,6 +89,34 @@ class SendReadyState extends StatelessWidget {
             ),
           ),
         ).animate().slideY(begin: 0.2, duration: 400.ms, delay: 200.ms).fadeIn(),
+        const SizedBox(height: 12),
+        BlocBuilder<SettingsCubit, SettingsState>(
+          builder: (context, state) {
+            if (state is! SettingsLoaded) return const SizedBox.shrink();
+            final settings = state.settings;
+            return Card(
+              child: SwitchListTile(
+                value: settings.autoSkipFailed,
+                onChanged: (v) {
+                  context.read<SettingsCubit>().save(
+                        settings.copyWith(autoSkipFailed: v),
+                      );
+                },
+                title: const Text(
+                  'تخطي الأرقام الفاشلة تلقائياً',
+                  textDirection: TextDirection.rtl,
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                ),
+                subtitle: const Text(
+                  'تجنب توقف عملية الإرسال عند فشل إحدى الرسائل',
+                  textDirection: TextDirection.rtl,
+                  style: TextStyle(fontSize: 11),
+                ),
+                secondary: const Icon(Icons.skip_next_rounded, color: AppColors.primary),
+              ),
+            );
+          },
+        ).animate().slideY(begin: 0.2, duration: 400.ms, delay: 250.ms).fadeIn(),
         if (isRequesting)
           const Padding(
             padding: EdgeInsets.all(20),

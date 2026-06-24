@@ -7,6 +7,7 @@ import 'package:sender_sms/core/routing/app_routes.dart';
 import 'package:sender_sms/features/import_excel/data/models/student.dart';
 import 'package:sender_sms/features/send_sms/logic/send_cubit.dart';
 import 'package:sender_sms/features/send_sms/logic/send_state.dart';
+import 'package:sender_sms/features/settings/logic/settings_cubit.dart';
 import 'widgets/cancel_confirm_dialog.dart';
 import 'widgets/send_cancelled_state.dart';
 import 'widgets/send_controls.dart';
@@ -24,8 +25,11 @@ class SendSmsPage extends StatelessWidget {
   const SendSmsPage({super.key, required this.students, required this.template});
 
   @override
-  Widget build(BuildContext context) => BlocProvider.value(
-        value: sl<SendCubit>(),
+  Widget build(BuildContext context) => MultiBlocProvider(
+        providers: [
+          BlocProvider.value(value: sl<SendCubit>()),
+          BlocProvider(create: (_) => sl<SettingsCubit>()..load()),
+        ],
         child: Builder(builder: (context) => _buildBody(context)),
       );
 

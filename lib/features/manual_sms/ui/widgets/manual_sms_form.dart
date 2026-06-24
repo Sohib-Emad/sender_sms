@@ -54,7 +54,7 @@ class _ManualSmsFormState extends State<ManualSmsForm> {
       } else if (result.isLowBalance) {
         context.showSnack('الرصيد غير كافٍ للإرسال', isError: true);
       } else {
-        context.showSnack('فشل إرسال الرسالة', isError: true);
+        context.showSnack('فشل: ${result.errorMessage ?? "unknown"}', isError: true);
       }
     } catch (e) {
       if (mounted) context.showSnack('خطأ: ${e.toString()}', isError: true);

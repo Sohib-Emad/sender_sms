@@ -163,6 +163,9 @@ class SendControls extends StatelessWidget {
     if (error == 'low_balance') {
       return 'رصيد الشريحة غير كافٍ لإرسال الرسالة.';
     }
+    if (error == 'generic_failure') {
+      return 'فشل عام في الإرسال (تأكد من الرصيد، صلاحية التطبيق، وصيغة الرقم).';
+    }
     if (error == 'no_service') {
       return 'لا توجد شبكة تغطية حالياً (No Service).';
     }
