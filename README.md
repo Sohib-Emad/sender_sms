@@ -1,95 +1,94 @@
-# 📱 تطبيق مُرسِل الـ SMS (Sender SMS)
+# 📱 Sender SMS App
 
-تطبيق احترافي للهواتف الذكية مبني باستخدام إطار العمل **Flutter**، مخصص للمدارس، المراكز التعليمية (السناتر)، والمؤسسات لإرسال نتائج درجات الطلاب والرسائل الدورية لأولياء الأمور عبر الرسائل النصية القصيرة (SMS) بشكل جماعي وآلي ومباشر من الهاتف.
-
----
-
-## 🚀 المميزات الرئيسية (Key Features)
-
-### 📊 1. استيراد البيانات الذكي من Excel
-* استيراد قوائم الطلاب والدرجات وأرقام الهواتف مباشرة من ملفات Excel بمرونة تامة.
-* دعم التحديد التلقائي للأعمدة سواء كانت المسميات باللغة العربية (الاسم، الدرجة، الهاتف) أو الإنجليزية (name, degree, phone).
-* تهيئة وتنظيف الأرقام تلقائياً لتناسب صيغة شبكات الاتصالات المصرية (Vodafone, Orange, Etisalat, WE).
-
-### 📲 2. دعم الشريحتين (Dual SIM Support)
-* إمكانية اختيار شريحة الإرسال النشطة (شريحة 1 أو شريحة 2) مباشرة من إعدادات التطبيق لضمان اختيار العرض الأوفر أو التغطية الأفضل.
-
-### 🛡️ 3. تخطي الحظر وتعيين التطبيق كافتراضي (Default SMS App)
-* دعم طلب التعيين كتطبيق رسائل افتراضي داخل نظام أندرويد لتفادي قيود الحظر الصارمة لعدد الرسائل وحماية الشريحة من التوقف أثناء الإرسال الجماعي الكثيف.
-
-### ⏳ 4. الفواصل الزمنية والتحكم الذكي (Rate Limiting)
-* إمكانية تحديد فاصل زمني (بالثواني) بين كل رسالة وأخرى لتجنب حظر شركات الاتصالات لشرائح الإرسال.
-* تحكم كامل أثناء عملية الإرسال: (إيقاف مؤقت / استئناف / إلغاء البث).
-* خاصية إبقاء الشاشة مضيئة (`Keep Screen On`) برمجياً طوال عملية الإرسال لضمان عدم خمول المعالج وتوقف الإرسال.
-
-### 📝 5. قوالب الرسائل الديناميكية (Custom Templates)
-* إعداد وحفظ قوالب رسائل مخصصة مع إمكانية استخدام متغيرات ديناميكية مثل:
-  * `{name}`: لتعويض اسم الطالب تلقائياً.
-  * `{degree}`: لتعويض درجة الطالب تلقائياً.
-  * `{phone}`: لتعويض رقم الهاتف تلقائياً.
-
-### 🛠️ 6. إدارة ومعالجة الأخطاء الذكية
-* فحص شامل لحالة التغطية، وتوافر الرصيد، ووضع الطيران.
-* إظهار تفاصيل أسباب الفشل باللغة العربية (مثل: نفاد الرصيد، لا توجد شبكة، تجاوز الحد الأقصى للإرسال).
-* ميزة **التخطي التلقائي (Auto-Skip)** عند فشل إرسال رقم معين مع تفعيل فترة تهدئة للشبكة (5 ثوانٍ) لمنع تراكم الطلبات الفاشلة.
-* واجهة منفصلة مخصصة لإعادة إرسال الرسائل الفاشلة فقط بعد إصلاح المشكلة.
-
-### 📋 7. أرشيف وسجلات تفصيلية (History & Reporting)
-* حفظ تفصيلي لكل حملات الإرسال السابقة (Sessions).
-* تسجيل تفصيلي لحالة كل طالب في الحملة (تاريخ ووقت الإرسال، الرسالة المرسلة، ناجح أم فاشل مع السبب).
-* إمكانية تصدير سجلات الحملات كملفات Excel للمراجعة الورقية والمستندية.
-
-### ☁️ 8. المتابعة والتحليل (Firebase & Shorebird)
-* إرسال إحصائيات الجلسات وأرقام الطلاب المتصلة لـ Firebase لمتابعة استهلاك الخدمة في الخلفية (أرقام فقط لحفظ خصوصية محتوى الرسائل).
-* مدمج بتقنية **Shorebird** لتلقي التحديثات البرمجية الفورية الساخنة (Hot Patches) دون الحاجة لإعادة تحميل التطبيق من المتجر.
+A professional mobile application built using **Flutter**, designed for schools, educational centers, and institutions to send student grades, exam results, and periodic updates to parents via SMS in bulk, automatically, and directly from their phone.
 
 ---
 
-## 🛠️ التقنيات المستخدمة (Tech Stack)
+## 🚀 Key Features
 
-* **إطار العمل الأساسي:** Flutter (SDK ^3.0.0) & Dart.
-* **إدارة الحالة (State Management):** Flutter BLoC / Cubit للتجاوب السريع وفصل المنطق البرمجي عن الواجهات.
-* **قاعدة البيانات المحلية (Local Storage):** Hive (سريعة وخفيفة الوزن لتخزين سجلات الجلسات وقوالب الرسائل والإعدادات).
-* **الكود الأصلي (Native Integration):** كود Kotlin مخصص للتكامل العميق مع نظام أندرويد لـ (`SmsManager`, `SubscriptionManager`, `BroadcastReceivers`, `RoleManager`).
-* **الخدمات السحابية:** Firebase Core, Firebase Auth, Cloud Firestore, Firebase Messaging.
-* **التحديثات الفورية:** Shorebird.
+### 📊 1. Smart Excel Data Import
+* Import student lists, grades, and phone numbers directly from Excel files.
+* Auto-detects columns whether they are named in Arabic (الاسم، الدرجة، الهاتف) or English (name, degree, phone).
+* Automatically cleans and normalizes phone numbers to fit standard mobile operator formats.
+
+### 📲 2. Dual SIM Support
+* Choose which active SIM card (SIM 1 or SIM 2) to send messages from directly within the app settings to optimize SMS package costs or cellular coverage.
+
+### 🛡️ 3. Default SMS App Mode
+* Seamlessly request to set the app as the default SMS handler on Android, allowing it to bypass system-level rate limits and protect the SIM card from blocking during bulk campaigns.
+
+### ⏳ 4. Custom Rate Limiting & Live Controls
+* Define custom delay intervals (in seconds) between each message to prevent network spam filters from flags.
+* Full real-time control during sending campaigns: (Pause / Resume / Cancel).
+* Programmatic `Keep Screen On` utility to prevent the CPU from entering low-power sleep mode, ensuring the sending loop runs continuously.
+
+### 📝 5. Dynamic Message Templates
+* Create and save reusable message templates using dynamic placeholders:
+  * `{name}`: Automatically replaces with the student's name.
+  * `{degree}`: Automatically replaces with the student's grade/mark.
+  * `{phone}`: Automatically replaces with the student's phone number.
+
+### 🛠️ 6. Robust Error Handling & Recovery
+* Real-time validation of network coverage, carrier credits, and flight mode.
+* Informative Arabic error logs (e.g., low balance, no service, radio off, rate limit exceeded).
+* **Auto-Skip** failed recipients with a 5-second cooldown delay to allow the network to stabilize.
+* A dedicated dashboard to review and resend failed logs after fixing any network or number issues.
+
+### 📋 7. History & Detailed Reporting
+* Keep an active archive of all past sending sessions (campaigns).
+* Log status reports for each recipient (sent time, message payload, success/failure status with exact error reasons).
+* Export session logs directly as Excel files for administrative record-keeping.
+
+### ☁️ 8. Tracking & Updates (Firebase & Shorebird)
+* Report anonymous stats (totals, successes, failures, phone lists contacted) to Firebase Console for server-side quality monitoring (retaining zero message contents for user privacy).
+* Embedded with **Shorebird Code Push** to receive hot-patches instantly, bypassing app stores for critical updates.
 
 ---
 
-## 📂 الهيكل التنظيمي للمشروع (Project Structure)
+## 🛠️ Technology Stack
 
-يتبع المشروع معايير هندسة البرمجيات النظيفة القائمة على الميزات (Feature-First Architecture) المقسمة كالتالي:
+* **Core Framework:** Flutter (SDK ^3.0.0) & Dart.
+* **State Management:** Flutter BLoC / Cubit for clean separation of business logic and UI.
+* **Local Storage:** Hive (Ultra-fast, lightweight key-value database for local logs, sessions, templates, and configurations).
+* **Native Integration:** Kotlin custom MethodChannel integration for (`SmsManager`, `SubscriptionManager`, `BroadcastReceivers`, `RoleManager`).
+* **Cloud Services:** Firebase Core, Firebase Auth, Cloud Firestore, Firebase Messaging.
+* **Code Push:** Shorebird.
+
+---
+
+## 📂 Project Structure
+
+This project follows a clean, feature-first modular architecture:
 
 ```text
 lib/
 ├── core/
-│   ├── constants/       # الثوابت (الألوان، النصوص، المعرفات)
-│   ├── di/              # حقن الاعتماديات (Dependency Injection - GetIt)
-│   ├── routing/         # نظام التنقل والتوجيه (GoRouter)
-│   ├── services/        # الخدمات المشتركة (قاعدة البيانات Hive، إشعارات Firebase، كود الأندرويد الأصلي)
-│   └── theme/           # ثيمات التطبيق (المظلم والمضيء)
+│   ├── constants/       # App constants (colors, strings, assets keys)
+│   ├── di/              # Dependency Injection container (GetIt)
+│   ├── routing/         # Application navigation router (GoRouter)
+│   ├── services/        # Shared services (Hive database, FCM service, Android native bridge)
+│   └── theme/           # UI Theme configurations (light & dark theme)
 └── features/
-    ├── auth/            # نظام تسجيل الدخول والتحقق من الصلاحيات
-    ├── failed_messages/ # واجهة إعادة إرسال الرسائل الفاشلة
-    ├── history/         # أرشيف الجلسات وسجلات الإرسال وتصدير الإكسيل
-    ├── home/            # الواجهة الرئيسية وتنسيق النوافذ
-    ├── import_excel/    # معالجة ورفع وقراءة ملفات الإكسيل للطلاب
-    ├── manual_sms/      # إرسال رسالة منفصلة يدوياً
-    ├── message_template/# إعداد وتعديل قوالب الرسائل الجاهزة
-    ├── notifications/   # إدارة وتلقي إشعارات النظام
-    ├── onboarding/      # واجهات الترحيب والتعريف بالبرنامج
-    ├── send_sms/        # واجهة تشغيل البث ومراقبة التقدم في الوقت الفعلي
-    └── settings/        # إعدادات الفترات الزمنية وتحديد الشريحة الافتراضية
+    ├── auth/            # Authentications and account validations
+    ├── failed_messages/ # Dashboard to retry and review failed logs
+    ├── history/         # Sessions history list, logs viewer, and Excel export
+    ├── home/            # Shell container layouts and dashboard navigation
+    ├── import_excel/    # File picking, parsing, and validation of Excel lists
+    ├── manual_sms/      # Form to send custom one-off messages manually
+    ├── message_template/# Dynamic templates builder and catalog
+    ├── notifications/   # System-wide alert logs manager
+    ├── onboarding/      # Welcome slide overlays for first launch setup
+    ├── send_sms/        # Queue processor view showing real-time sending progress
+    └── settings/        # Interval sliders and default SIM select tools
 ```
 
 ---
 
-## 🛡️ رخصة الاستخدام والخصوصية
-* التطبيق مصمم للعمل المحلي (Local First) لحفظ خصوصية بيانات الطلاب وأرقام الهواتف.
-* لا يتم إرسال أي محتوى للرسائل النصية خارج الهاتف، ويقتصر اتصال Firebase على إحصائيات الأعداد لتتبع جودة الخدمة فقط.
+## 🛡️ License & Privacy
+* The application is built Local-First to respect student data privacy.
+* All SMS text content is kept local on your physical device. Firebase integrations are restricted to numerical counters and log statistics to keep operations secure and private.
 
 ---
 
-## ✍️ مطور التطبيق (Developer)
-تم تطوير هذا التطبيق بواسطة المهندس **صهيب عماد** (Sohib Emad).
-
+## ✍️ Developer
+Developed with ❤️ by **Sohib Emad** (صهيب عماد).
