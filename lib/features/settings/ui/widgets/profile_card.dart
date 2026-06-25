@@ -22,26 +22,20 @@ class ProfileCard extends StatelessWidget {
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(24),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.04),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              ),
-            ],
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: const Color(0xFFE8EDF0), width: 0.5),
           ),
           child: Row(
             textDirection: TextDirection.rtl,
             children: [
               CircleAvatar(
                 radius: 28,
-                backgroundColor: AppColors.primary.withValues(alpha: 0.15),
+                backgroundColor: AppColors.primary.withValues(alpha: 0.1),
                 child: Text(
                   name.isNotEmpty ? name[0].toUpperCase() : 'U',
                   style: const TextStyle(
                     fontWeight: FontWeight.bold,
-                    color: AppColors.primaryDark,
+                    color: AppColors.primary,
                     fontSize: 20,
                   ),
                 ),

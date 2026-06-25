@@ -1,5 +1,6 @@
 class AppRoutes {
   static const login = '/login';
+  static const onboarding = '/onboarding';
   static const home = '/';
   static const importExcel = '/import';
   static const dataPreview = '/preview';
@@ -11,4 +12,5 @@ class AppRoutes {
   static const settings = '/settings';
   static const manualSms = '/manual-sms';
   static const adminDashboard = '/admin';
+  static const notifications = '/notifications';
 }

@@ -87,7 +87,7 @@ class _AddUserFormState extends State<AddUserForm> {
               value: _isAdminUser,
               onChanged: (val) => setState(() => _isAdminUser = val),
               contentPadding: EdgeInsets.zero,
-              activeColor: AppColors.primary,
+              activeThumbColor: AppColors.primary,
             ),
             const SizedBox(height: 24),
             SaveUserButton(

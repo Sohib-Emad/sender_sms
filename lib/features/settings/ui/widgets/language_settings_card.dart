@@ -75,7 +75,7 @@ class _LanguageButton extends StatelessWidget {
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(vertical: 12),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.primary : AppColors.primary.withOpacity(0.1),
+          color: isSelected ? AppColors.primary : AppColors.primary.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(10),
           border: Border.all(color: AppColors.primary, width: isSelected ? 0 : 1),
         ),

@@ -30,7 +30,7 @@ class HistorySessionCard extends StatelessWidget {
                           CircularProgressIndicator(
                             value: successRate / 100,
                             strokeWidth: 6,
-                            backgroundColor: AppColors.error.withOpacity(0.2),
+                            backgroundColor: AppColors.error.withValues(alpha: 0.2),
                             valueColor: AlwaysStoppedAnimation<Color>(
                               successRate > 80 ? AppColors.success : AppColors.warning,
                             ),
@@ -48,7 +48,7 @@ class HistorySessionCard extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                       decoration: BoxDecoration(
-                        color: session.status == 'completed' ? AppColors.success.withOpacity(0.15) : AppColors.warning.withOpacity(0.15),
+                        color: session.status == 'completed' ? AppColors.success.withValues(alpha: 0.15) : AppColors.warning.withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Text(
@@ -101,7 +101,7 @@ class _StatChip extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+      decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
       child: Text(
         label,
         style: TextStyle(fontSize: 11, color: color, fontWeight: FontWeight.bold),

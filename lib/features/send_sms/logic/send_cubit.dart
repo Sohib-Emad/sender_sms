@@ -55,6 +55,8 @@ class SendCubit extends Cubit<SendState> {
       final progress = SendProgress(total: students.length, sessionId: sessionId, isRunning: true);
       emit(SendInProgress(progress));
 
+      await _smsService.keepScreenOn(true);
+
       await for (final p in _sendBatchUseCase(
         students: students,
         template: template,
@@ -85,14 +87,17 @@ class SendCubit extends Cubit<SendState> {
         if (_pendingRetry) continue;
 
         if (p.isCompleted) {
+          await _smsService.keepScreenOn(false);
           emit(SendCompleted(p));
         } else if (p.isCancelled) {
+          await _smsService.keepScreenOn(false);
           emit(SendCancelled(p));
         } else {
           emit(_isPaused ? SendPaused(p) : SendInProgress(p));
         }
       }
     } catch (e) {
+      await _smsService.keepScreenOn(false);
       emit(SendError(e.toString()));
     }
   }
@@ -132,6 +137,7 @@ class SendCubit extends Cubit<SendState> {
   void cancel() {
     _isCancelled = true;
     _pendingRetry = false;
+    _smsService.keepScreenOn(false);
     emit(SendCancelled(_lastProgress ?? const SendProgress()));
   }
 
@@ -139,6 +145,7 @@ class SendCubit extends Cubit<SendState> {
     _shouldRetry = false;
     _shouldSkip = false;
     _pendingRetry = false;
+    _smsService.keepScreenOn(false);
     emit(SendIdle());
   }
 }

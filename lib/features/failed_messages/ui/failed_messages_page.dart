@@ -6,6 +6,7 @@ import 'package:sender_sms/core/constants/app_colors.dart';
 import 'package:sender_sms/core/di/injection.dart';
 import 'package:sender_sms/core/routing/app_routes.dart';
 import 'package:sender_sms/features/failed_messages/logic/failed_cubit.dart';
+import 'package:sender_sms/features/failed_messages/logic/failed_state.dart';
 import 'package:sender_sms/features/history/data/models/sms_log.dart';
 import 'package:sender_sms/features/import_excel/data/models/student.dart';
 

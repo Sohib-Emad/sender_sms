@@ -75,15 +75,18 @@ class _SimButton extends StatelessWidget {
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(vertical: 12),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.primary : AppColors.primary.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: AppColors.primary, width: isSelected ? 0 : 1),
+          color: isSelected ? AppColors.primary : const Color(0xFFF1F5F9),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isSelected ? AppColors.primary : const Color(0xFFE8EDF0),
+            width: 1,
+          ),
         ),
         child: Center(
           child: Text(
             label,
             style: TextStyle(
-              color: isSelected ? Colors.white : AppColors.primary,
+              color: isSelected ? Colors.white : AppColors.textSecondary,
               fontWeight: FontWeight.bold,
             ),
             textDirection: TextDirection.rtl,

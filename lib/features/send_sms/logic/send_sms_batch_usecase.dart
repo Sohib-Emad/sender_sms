@@ -79,6 +79,8 @@ class SendSmsBatchUseCase {
               ...recentLogs.take(49),
             ];
             await _saveSmsLog(sessionId, student, message, result);
+            // فترة تهدئة 5 ثوانٍ بعد الفشل التلقائي لمنع تراكم الطلبات
+            await Future.delayed(const Duration(seconds: 5));
           } else {
             // إرسال حالة الفشل الحالية لواجهة المستخدم وتفعيل الانتظار
             yield SendProgress(
@@ -104,6 +106,8 @@ class SendSmsBatchUseCase {
                   ...recentLogs.take(49),
                 ];
                 await _saveSmsLog(sessionId, student, message, result);
+                // فترة تهدئة 5 ثوانٍ بعد التخطي اليدوي
+                await Future.delayed(const Duration(seconds: 5));
                 break;
               }
               await Future.delayed(const Duration(milliseconds: 200));
@@ -124,7 +128,7 @@ class SendSmsBatchUseCase {
       if (cancelled) break;
 
       if (i < students.length - 1) {
-        final delay = settings.delaySeconds > 0 ? settings.delaySeconds : 2.0;
+        final delay = settings.delaySeconds > 0 ? settings.delaySeconds : 10.0;
         await Future.delayed(Duration(milliseconds: (delay * 1000).toInt()));
       }
     }

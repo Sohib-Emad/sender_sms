@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:excel/excel.dart';
 import 'package:uuid/uuid.dart';
 import 'package:sender_sms/features/import_excel/data/models/student.dart';
+import 'package:sender_sms/core/utils/extensions.dart';
 
 class ExcelReader {
   static const _uuid = Uuid();
@@ -50,14 +51,7 @@ class ExcelReader {
       if (name.isEmpty && phone.isEmpty) continue;
       if (phone.isEmpty) continue;
 
-      phone = phone.replaceAll(RegExp(r'[\s\-()]+'), '');
-      if (phone.length == 10 &&
-          (phone.startsWith('10') ||
-              phone.startsWith('11') ||
-              phone.startsWith('12') ||
-              phone.startsWith('15'))) {
-        phone = '0$phone';
-      }
+      phone = phone.normalizeEgyptianPhone;
 
       students.add(Student(
         id: _uuid.v4(),

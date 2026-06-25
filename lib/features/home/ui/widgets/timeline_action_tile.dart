@@ -21,118 +21,77 @@ class TimelineActionTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return IntrinsicHeight(
-      child: Row(
-        textDirection: TextDirection.rtl,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // Dot and Line
-          Column(
-            children: [
-              Container(
-                width: 32,
-                height: 32,
-                decoration: BoxDecoration(
-                  color: isActive ? AppColors.primary : Colors.white,
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: isActive ? AppColors.primary : Colors.grey.shade300,
-                    width: 2,
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE8EDF0), width: 0.5),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(16),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(16),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              textDirection: TextDirection.rtl,
+              children: [
+                // Green Icon Container (36x36, radius 10, bg #E8F5EE)
+                Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE8F5EE),
+                    borderRadius: BorderRadius.circular(10),
                   ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: (isActive ? AppColors.primary : Colors.black).withValues(alpha: 0.05),
-                      blurRadius: 6,
-                      offset: const Offset(0, 3),
-                    ),
-                  ],
+                  child: Icon(
+                    icon,
+                    color: AppColors.primary,
+                    size: 20,
+                  ),
                 ),
-                child: Icon(
-                  icon,
-                  color: isActive ? Colors.white : AppColors.textSecondary,
-                  size: 14,
-                ),
-              ),
-              if (!isLast)
+                const SizedBox(width: 16),
+                // Text details
                 Expanded(
-                  child: Container(
-                    width: 2,
-                    color: Colors.grey.shade200,
-                  ),
-                ),
-            ],
-          ),
-          const SizedBox(width: 16),
-          // Content Card
-          Expanded(
-            child: Container(
-              margin: const EdgeInsets.only(bottom: 16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: isActive ? AppColors.primary : Colors.grey.shade100,
-                  width: isActive ? 1.5 : 1,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.03),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Material(
-                color: Colors.transparent,
-                borderRadius: BorderRadius.circular(20),
-                child: InkWell(
-                  onTap: onTap,
-                  borderRadius: BorderRadius.circular(20),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
-                    child: Row(
-                      textDirection: TextDirection.rtl,
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            textDirection: TextDirection.rtl,
-                            children: [
-                              Text(
-                                title,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 14,
-                                  color: AppColors.textPrimary,
-                                ),
-                                textDirection: TextDirection.rtl,
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                subtitle,
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: AppColors.textSecondary.withValues(alpha: 0.8),
-                                ),
-                                textDirection: TextDirection.rtl,
-                              ),
-                            ],
-                          ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    textDirection: TextDirection.rtl,
+                    children: [
+                      Text(
+                        title,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                          color: AppColors.textPrimary,
                         ),
-                        Icon(
-                          Icons.arrow_forward_ios_rounded,
-                          size: 14,
-                          color: isActive ? AppColors.primary : AppColors.textHint,
+                        textDirection: TextDirection.rtl,
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        subtitle,
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: AppColors.textSecondary,
                         ),
-                      ],
-                    ),
+                        textDirection: TextDirection.rtl,
+                      ),
+                    ],
                   ),
                 ),
-              ),
+                const SizedBox(width: 16),
+                // Chevron Arrow
+                const Icon(
+                  Icons.arrow_forward_ios_rounded,
+                  size: 14,
+                  color: AppColors.textHint,
+                ),
+              ],
             ),
           ),
-        ],
+        ),
       ),
     );
   }

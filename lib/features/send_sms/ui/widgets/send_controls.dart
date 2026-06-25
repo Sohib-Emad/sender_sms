@@ -11,7 +11,8 @@ class SendControls extends StatelessWidget {
   final List<Student> students;
   final String template;
 
-  const SendControls({super.key, required this.students, required this.template});
+  const SendControls(
+      {super.key, required this.students, required this.template});
 
   @override
   Widget build(BuildContext context) {
@@ -24,21 +25,29 @@ class SendControls extends StatelessWidget {
             child: ElevatedButton.icon(
               onPressed: state is SendRequestingPermission
                   ? null
-                  : () => context.read<SendCubit>().startBatch(students: students, template: template),
+                  : () => context
+                      .read<SendCubit>()
+                      .startBatch(students: students, template: template),
               icon: const Icon(Icons.send_rounded),
               label: Text('بدء الإرسال (${students.length})'),
-              style: ElevatedButton.styleFrom(backgroundColor: AppColors.success, foregroundColor: Colors.white),
+              style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.success,
+                  foregroundColor: Colors.white),
             ),
           );
         }
         if (state is SendInProgress) {
           return Row(children: [
             Expanded(
-              child: OutlinedButton(
+              child: ElevatedButton(
                 onPressed: () => _confirmCancel(context),
-                style: OutlinedButton.styleFrom(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.errorLight,
                   foregroundColor: AppColors.error,
-                  side: const BorderSide(color: AppColors.error, width: 1.5),
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
                 child: const Text('إلغاء'),
               ),
@@ -46,9 +55,12 @@ class SendControls extends StatelessWidget {
             const SizedBox(width: 12),
             Expanded(
               flex: 2,
-              child: ElevatedButton(
+              child: OutlinedButton(
                 onPressed: () => context.read<SendCubit>().pause(),
-                style: ElevatedButton.styleFrom(backgroundColor: AppColors.warning),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.primary,
+                  side: const BorderSide(color: AppColors.primary, width: 1.0),
+                ),
                 child: const Text('إيقاف مؤقت'),
               ),
             ),
@@ -57,11 +69,15 @@ class SendControls extends StatelessWidget {
         if (state is SendPaused) {
           return Row(children: [
             Expanded(
-              child: OutlinedButton(
+              child: ElevatedButton(
                 onPressed: () => _confirmCancel(context),
-                style: OutlinedButton.styleFrom(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.errorLight,
                   foregroundColor: AppColors.error,
-                  side: const BorderSide(color: AppColors.error, width: 1.5),
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
                 child: const Text('إلغاء'),
               ),
@@ -71,7 +87,10 @@ class SendControls extends StatelessWidget {
               flex: 2,
               child: ElevatedButton(
                 onPressed: () => context.read<SendCubit>().resume(),
-                style: ElevatedButton.styleFrom(backgroundColor: AppColors.success),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                ),
                 child: const Text('استكمال'),
               ),
             ),
@@ -83,27 +102,36 @@ class SendControls extends StatelessWidget {
             children: [
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                 margin: const EdgeInsets.only(bottom: 12),
                 decoration: BoxDecoration(
-                  color: AppColors.error.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: AppColors.error.withValues(alpha: 0.3), width: 1),
+                  color: AppColors.errorLight,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                      color: AppColors.error.withValues(alpha: 0.1), width: 1),
                 ),
                 child: Text(
                   'فشل الإرسال: ${_translateError(state.errorMessage)}\nاختر إجراء للاستكمال من حيث توقفت.',
-                  style: const TextStyle(color: AppColors.error, fontSize: 13, fontWeight: FontWeight.bold),
+                  style: const TextStyle(
+                      color: AppColors.error,
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold),
                   textAlign: TextAlign.center,
                   textDirection: TextDirection.rtl,
                 ),
               ),
               Row(children: [
                 Expanded(
-                  child: OutlinedButton(
+                  child: ElevatedButton(
                     onPressed: () => _confirmCancel(context),
-                    style: OutlinedButton.styleFrom(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.errorLight,
                       foregroundColor: AppColors.error,
-                      side: const BorderSide(color: AppColors.error, width: 1.5),
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
                     child: const Text('إلغاء'),
                   ),
@@ -114,7 +142,8 @@ class SendControls extends StatelessWidget {
                     onPressed: () => context.read<SendCubit>().skipFailed(),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: AppColors.warning,
-                      side: const BorderSide(color: AppColors.warning, width: 1.5),
+                      side: const BorderSide(
+                          color: AppColors.warning, width: 1.0),
                     ),
                     child: const Text('تخطي'),
                   ),
@@ -124,7 +153,10 @@ class SendControls extends StatelessWidget {
                   flex: 2,
                   child: ElevatedButton(
                     onPressed: () => context.read<SendCubit>().retryFailed(),
-                    style: ElevatedButton.styleFrom(backgroundColor: AppColors.success),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: Colors.white,
+                    ),
                     child: const Text('إعادة محاولة'),
                   ),
                 ),
@@ -136,13 +168,17 @@ class SendControls extends StatelessWidget {
           return SizedBox(
             width: double.infinity,
             height: 52,
-            child: OutlinedButton.icon(
+            child: ElevatedButton.icon(
               onPressed: () {
                 context.read<SendCubit>().reset();
                 context.pop();
               },
               icon: const Icon(Icons.arrow_back_rounded),
               label: const Text('العودة'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+              ),
             ),
           );
         }
@@ -152,7 +188,9 @@ class SendControls extends StatelessWidget {
   }
 
   void _confirmCancel(BuildContext context) {
-    showDialog<bool>(context: context, builder: (_) => const CancelConfirmDialog()).then((c) {
+    showDialog<bool>(
+        context: context,
+        builder: (_) => const CancelConfirmDialog()).then((c) {
       if (c == true && context.mounted) {
         context.read<SendCubit>().cancel();
       }

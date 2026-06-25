@@ -34,7 +34,7 @@ class SmsService {
             {'phone': to, 'message': message, 'simSlot': simSlot},
           )
           .timeout(
-            const Duration(seconds: 32),
+            const Duration(seconds: 62),
             onTimeout: () => {'success': false, 'error': 'timeout'},
           );
 
@@ -43,19 +43,45 @@ class SmsService {
 
       if (success) return const SmsResult.success();
 
+      String translatedError = 'فشل إرسال الرسالة';
+      if (error != null) {
+        if (error == 'timeout') {
+          translatedError = 'انتهت مهلة الإرسال (Timeout) - تأكد من تعيين التطبيق كافتراضي أو مراجعة أذونات الخلفية';
+        } else if (error == 'generic_failure') {
+          translatedError = 'فشل عام (Generic Failure) - قد يكون بسبب نفاد الرصيد أو قيود النظام';
+        } else if (error == 'no_service') {
+          translatedError = 'لا توجد خدمة (No Service) - تأكد من وجود تغطية للشبكة';
+        } else if (error == 'null_pdu') {
+          translatedError = 'خطأ في بنية حزمة الرسالة (Null PDU)';
+        } else if (error == 'radio_off') {
+          translatedError = 'وضع الطيران نشط أو اللاسلكي مغلق (Radio Off)';
+        } else if (error == 'limit_exceeded') {
+          translatedError = 'تجاوز الحد المسموح به للإرسال في الدقيقة (Limit Exceeded)';
+        } else if (error == 'permission_denied') {
+          translatedError = 'تم رفض صلاحية إرسال الرسائل (Permission Denied)';
+        } else {
+          translatedError = error;
+        }
+      }
+
       // كشف رصيد منخفض من رسائل Android SmsManager
       final isLowBalance = error != null &&
           (error.contains('low_balance') ||
               error.contains('RESULT_NO_DEFAULT_SMS_APP') ||
-              error.contains('3') // RESULT_ERROR_NO_SERVICE
+              error.contains('3') || // RESULT_ERROR_NO_SERVICE
+              error.contains('no_service') ||
+              error.contains('generic_failure')
           );
 
       if (error == 'timeout') {
-        return const SmsResult.failure(errorType: SmsErrorType.timeout);
+        return SmsResult.failure(
+          errorType: SmsErrorType.timeout,
+          errorMessage: translatedError,
+        );
       }
       return SmsResult.failure(
         errorType: isLowBalance ? SmsErrorType.lowBalance : SmsErrorType.unknown,
-        errorMessage: error,
+        errorMessage: translatedError,
       );
     } catch (e) {
       return SmsResult.failure(
@@ -82,5 +108,11 @@ class SmsService {
     } catch (e) {
       return '';
     }
+  }
+
+  Future<void> keepScreenOn(bool keep) async {
+    try {
+      await _channel.invokeMethod(keep ? 'keepScreenOn' : 'clearKeepScreenOn');
+    } catch (_) {}
   }
 }

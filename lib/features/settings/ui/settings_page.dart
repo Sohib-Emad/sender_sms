@@ -6,7 +6,6 @@ import 'package:sender_sms/features/settings/logic/settings_cubit.dart';
 import 'package:sender_sms/core/constants/screen_strings.dart';
 import 'widgets/section_header.dart';
 import 'widgets/delay_settings_card.dart';
-import 'widgets/sim_settings_card.dart';
 import 'widgets/daily_limit_card.dart';
 import 'widgets/auto_skip_settings_card.dart';
 import 'widgets/language_settings_card.dart';
@@ -33,7 +32,8 @@ class SettingsPage extends StatelessWidget {
       ),
       body: BlocBuilder<SettingsCubit, SettingsState>(
         builder: (context, state) {
-          final settings = state is SettingsLoaded ? state.settings : const AppSettings();
+          final settings =
+              state is SettingsLoaded ? state.settings : const AppSettings();
 
           return ListView(
             padding: const EdgeInsets.all(16),
@@ -43,8 +43,6 @@ class SettingsPage extends StatelessWidget {
               const SectionHeader(title: ScreenStrings.messageSettings),
               const SizedBox(height: 12),
               DelaySettingsCard(settings: settings),
-              const SizedBox(height: 12),
-              SimSettingsCard(settings: settings),
               const SizedBox(height: 12),
               DailyLimitCard(settings: settings),
               const SizedBox(height: 12),

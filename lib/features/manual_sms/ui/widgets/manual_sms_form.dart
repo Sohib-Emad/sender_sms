@@ -40,12 +40,13 @@ class _ManualSmsFormState extends State<ManualSmsForm> {
       if (!isDefault) {
         final status = await Permission.sms.request();
         if (!status.isGranted) {
-          if (mounted) context.showSnack('تم رفض صلاحية إرسال SMS', isError: true);
+          if (mounted)
+            context.showSnack('تم رفض صلاحية إرسال SMS', isError: true);
           return;
         }
       }
       final result = await _smsService.sendSms(
-        to: _phoneController.text.trim(),
+        to: _phoneController.text.trim().normalizeEgyptianPhone,
         message: _messageController.text,
       );
       if (!mounted) return;
@@ -54,7 +55,8 @@ class _ManualSmsFormState extends State<ManualSmsForm> {
       } else if (result.isLowBalance) {
         context.showSnack('الرصيد غير كافٍ للإرسال', isError: true);
       } else {
-        context.showSnack('فشل: ${result.errorMessage ?? "unknown"}', isError: true);
+        context.showSnack('فشل: ${result.errorMessage ?? "unknown"}',
+            isError: true);
       }
     } catch (e) {
       if (mounted) context.showSnack('خطأ: ${e.toString()}', isError: true);
@@ -68,7 +70,8 @@ class _ManualSmsFormState extends State<ManualSmsForm> {
       context: context,
       builder: (_) => AlertDialog(
         title: const Text('تم الإرسال', textDirection: TextDirection.rtl),
-        content: const Text('تم إرسال الرسالة بنجاح', textDirection: TextDirection.rtl),
+        content: const Text('تم إرسال الرسالة بنجاح',
+            textDirection: TextDirection.rtl),
         actions: [
           ElevatedButton(
             onPressed: () {
@@ -90,38 +93,94 @@ class _ManualSmsFormState extends State<ManualSmsForm> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          Text('بيانات المستلم', style: Theme.of(context).textTheme.titleMedium, textDirection: TextDirection.rtl),
-          const SizedBox(height: 12),
+          const Text(
+            'بيانات المستلم',
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+              color: AppColors.textPrimary,
+            ),
+            textDirection: TextDirection.rtl,
+          ),
+          const SizedBox(height: 10),
           TextFormField(
             controller: _phoneController,
             keyboardType: TextInputType.phone,
             textDirection: TextDirection.ltr,
-            decoration: const InputDecoration(labelText: 'رقم الهاتف', prefixIcon: Icon(Icons.phone_rounded)),
-            validator: (v) => (v == null || v.trim().isEmpty) ? 'الرجاء إدخال رقم الهاتف' : (v.trim().length < 8 ? 'رقم غير صحيح' : null),
+            decoration: const InputDecoration(
+              labelText: 'رقم الهاتف',
+              prefixIcon: Icon(Icons.phone_rounded, color: AppColors.primary),
+            ),
+            validator: (v) => (v == null || v.trim().isEmpty)
+                ? 'الرجاء إدخال رقم الهاتف'
+                : (v.trim().length < 8 ? 'رقم غير صحيح' : null),
           ),
           const SizedBox(height: 20),
-          Text('نص الرسالة', style: Theme.of(context).textTheme.titleMedium, textDirection: TextDirection.rtl),
-          const SizedBox(height: 12),
-          TextFormField(
-            controller: _messageController,
-            maxLines: 4,
+          const Text(
+            'نص الرسالة',
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+              color: AppColors.textPrimary,
+            ),
             textDirection: TextDirection.rtl,
-            decoration: const InputDecoration(labelText: 'اكتب الرسالة هنا', alignLabelWithHint: true),
-            validator: (v) => (v == null || v.trim().isEmpty) ? 'الرجاء كتابة نص الرسالة' : null,
           ),
-          const SizedBox(height: 12),
-          Align(alignment: Alignment.centerLeft, child: Text('عدد الأحرف: ${_messageController.text.length}', style: Theme.of(context).textTheme.bodySmall)),
-          const SizedBox(height: 32),
+          const SizedBox(height: 10),
+          Stack(
+            children: [
+              TextFormField(
+                controller: _messageController,
+                maxLines: 5,
+                textDirection: TextDirection.rtl,
+                decoration: const InputDecoration(
+                  labelText: 'اكتب الرسالة هنا',
+                  alignLabelWithHint: true,
+                  contentPadding: EdgeInsets.fromLTRB(16, 14, 16, 38),
+                ),
+                validator: (v) => (v == null || v.trim().isEmpty)
+                    ? 'الرجاء كتابة نص الرسالة'
+                    : null,
+              ),
+              Positioned(
+                left: 14,
+                bottom: 10,
+                child: Text(
+                  '${_messageController.text.length}/160',
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: AppColors.textHint,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 28),
           SizedBox(
             width: double.infinity,
-            height: 56,
+            height: 52,
             child: ElevatedButton.icon(
               onPressed: _isSending ? null : _sendSms,
               icon: _isSending
-                  ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
                   : const Icon(Icons.send_rounded),
-              label: Text(_isSending ? 'جارٍ الإرسال...' : 'إرسال'),
-              style: ElevatedButton.styleFrom(backgroundColor: AppColors.success, foregroundColor: Colors.white),
+              label: Text(
+                _isSending ? 'جارٍ الإرسال...' : 'إرسال',
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
             ),
           ),
         ],

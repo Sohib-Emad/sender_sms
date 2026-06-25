@@ -37,7 +37,7 @@ class FailedLogCard extends StatelessWidget {
                   onPressed: onRetry,
                   icon: const Icon(Icons.refresh_rounded, color: AppColors.primary),
                   style: IconButton.styleFrom(
-                    backgroundColor: AppColors.primary.withOpacity(0.1),
+                    backgroundColor: AppColors.primary.withValues(alpha: 0.1),
                   ),
                 ),
                 Column(
@@ -57,26 +57,38 @@ class FailedLogCard extends StatelessWidget {
                 ),
                 Container(
                   padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(color: AppColors.error.withOpacity(0.1), shape: BoxShape.circle),
+                  decoration: BoxDecoration(color: AppColors.error.withValues(alpha: 0.1), shape: BoxShape.circle),
                   child: const Icon(Icons.cancel_rounded, color: AppColors.error, size: 20),
                 ),
               ],
             ),
             const SizedBox(height: 12),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
-                color: AppColors.error.withOpacity(0.1),
+                color: AppColors.error.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: AppColors.error.withOpacity(0.3)),
+                border: Border.all(color: AppColors.error.withValues(alpha: 0.3)),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.end,
-                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                textDirection: TextDirection.rtl,
                 children: [
-                  Text(_errorLabel, style: const TextStyle(color: AppColors.error, fontSize: 13), textDirection: TextDirection.rtl),
-                  const SizedBox(width: 6),
-                  const Text('سبب الفشل:', style: TextStyle(fontSize: 12)),
+                  const Text(
+                    'سبب الفشل: ',
+                    style: TextStyle(fontSize: 12, color: AppColors.textSecondary, fontWeight: FontWeight.w500),
+                  ),
+                  const SizedBox(width: 4),
+                  Expanded(
+                    child: Text(
+                      _errorLabel,
+                      style: const TextStyle(color: AppColors.error, fontSize: 13, fontWeight: FontWeight.bold),
+                      textDirection: TextDirection.rtl,
+                      textAlign: TextAlign.right,
+                    ),
+                  ),
                 ],
               ),
             ),

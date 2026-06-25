@@ -13,6 +13,26 @@ extension StringExtension on String {
     return replaceAll(RegExp(r'[\s\-\(\)]'), '');
   }
 
+  String get normalizeEgyptianPhone {
+    final bool hasPlus = startsWith('+');
+    var phone = replaceAll(RegExp(r'\D'), '');
+    
+    if (phone.startsWith('0020') && phone.length == 14) {
+      phone = '0${phone.substring(4)}';
+    } else if (phone.startsWith('20') && phone.length == 12) {
+      phone = '0${phone.substring(2)}';
+    } else if (phone.length == 10 &&
+        (phone.startsWith('10') ||
+            phone.startsWith('11') ||
+            phone.startsWith('12') ||
+            phone.startsWith('15'))) {
+      phone = '0$phone';
+    } else if (hasPlus) {
+      phone = '+$phone';
+    }
+    return phone;
+  }
+
   bool get isNotBlank => trim().isNotEmpty;
 }
 

@@ -32,8 +32,8 @@ class VariablesSection extends StatelessWidget {
               avatar: Icon(v.$3, size: 16, color: AppColors.primary),
               label: Text('${v.$1} ${v.$2}', textDirection: TextDirection.rtl),
               onPressed: () => onVariableInsert(v.$1),
-              backgroundColor: AppColors.primary.withOpacity(0.1),
-              side: BorderSide(color: AppColors.primary.withOpacity(0.3)),
+              backgroundColor: AppColors.primary.withValues(alpha: 0.1),
+              side: BorderSide(color: AppColors.primary.withValues(alpha: 0.3)),
             );
           }).toList(),
         ),

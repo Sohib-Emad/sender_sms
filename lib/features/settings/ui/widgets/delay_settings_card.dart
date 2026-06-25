@@ -43,8 +43,8 @@ class DelaySettingsCard extends StatelessWidget {
             Slider(
               value: settings.delaySeconds.toDouble(),
               min: 0,
-              max: 10,
-              divisions: 10,
+              max: 60,
+              divisions: 60,
               label: '${settings.delaySeconds}s',
               onChanged: (value) {
                 context.read<SettingsCubit>().save(

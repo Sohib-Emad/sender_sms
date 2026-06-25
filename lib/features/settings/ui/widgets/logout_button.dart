@@ -12,25 +12,28 @@ class LogoutButton extends StatelessWidget {
       width: double.infinity,
       child: ElevatedButton.icon(
         onPressed: () => context.read<AuthCubit>().signOut(),
-        icon: const Icon(Icons.logout_rounded, color: Colors.white, size: 20),
+        icon: const Icon(Icons.logout_rounded, color: AppColors.error, size: 20),
         label: const Text(
           'تسجيل الخروج',
           style: TextStyle(
             fontWeight: FontWeight.bold,
-            color: Colors.white,
+            color: AppColors.error,
             fontSize: 15,
+            fontFamily: 'Cairo',
           ),
         ),
         style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.error,
+          backgroundColor: AppColors.errorLight,
+          foregroundColor: AppColors.error,
           padding: const EdgeInsets.symmetric(vertical: 14),
-          elevation: 2,
-          shadowColor: AppColors.error.withValues(alpha: 0.3),
+          elevation: 0,
+          shadowColor: Colors.transparent,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(24),
+            borderRadius: BorderRadius.circular(12),
           ),
         ),
       ),
     );
   }
 }
+

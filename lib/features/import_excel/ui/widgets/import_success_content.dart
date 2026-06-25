@@ -50,7 +50,7 @@ class ImportSuccessContent extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
+                  color: Colors.white.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Icon(Icons.check_circle_rounded,
@@ -92,7 +92,7 @@ class ImportSuccessContent extends StatelessWidget {
                       scrollDirection: Axis.horizontal,
                       child: DataTable(
                         headingRowColor: WidgetStateProperty.all(
-                          AppColors.primary.withOpacity(0.1),
+                          AppColors.primary.withValues(alpha: 0.1),
                         ),
                         columns: const [
                           DataColumn(label: Text('الدرجة')),

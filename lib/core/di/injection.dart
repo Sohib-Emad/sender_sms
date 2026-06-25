@@ -4,6 +4,8 @@ import 'package:get_it/get_it.dart';
 import 'package:sender_sms/core/services/firebase_reporting_service.dart';
 import 'package:sender_sms/core/services/hive_datasource.dart';
 import 'package:sender_sms/core/services/sms_service.dart';
+import 'package:sender_sms/core/services/notification_service.dart';
+import 'package:sender_sms/features/notifications/logic/notifications_cubit.dart';
 import 'package:sender_sms/features/auth/data/repos/auth_repository.dart';
 import 'package:sender_sms/features/auth/logic/auth_cubit.dart';
 import 'package:sender_sms/features/import_excel/data/repos/students_repository.dart';
@@ -32,6 +34,7 @@ Future<void> setupDependencies() async {
   sl.registerSingleton<HiveDatasource>(hiveDatasource);
   sl.registerLazySingleton<SmsService>(() => SmsService());
   sl.registerLazySingleton(() => FirebaseReportingService(sl(), sl()));
+  sl.registerLazySingleton<NotificationService>(() => NotificationService(sl()));
 
   // ── Repositories ──────────────────────────────────────
   sl.registerLazySingleton<AuthRepository>(
@@ -61,4 +64,5 @@ Future<void> setupDependencies() async {
   sl.registerFactory(() => SettingsCubit(sl()));
   sl.registerFactory(() => FailedCubit(sl(), sl(), sl()));
   sl.registerFactory(() => AdminDashboardCubit(sl()));
+  sl.registerSingleton<NotificationsCubit>(NotificationsCubit(sl()));
 }

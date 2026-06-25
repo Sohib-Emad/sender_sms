@@ -8,7 +8,7 @@ class AppSettings extends Equatable {
   final bool autoSkipFailed;
 
   const AppSettings({
-    this.delaySeconds = 2,
+    this.delaySeconds = 10,
     this.dailyLimit = 0,
     this.simSlot = 0,
     this.language = 'ar',
@@ -39,7 +39,7 @@ class AppSettings extends Equatable {
       };
 
   factory AppSettings.fromMap(Map<dynamic, dynamic> map) => AppSettings(
-        delaySeconds: (map['delaySeconds'] as int?) ?? 2,
+        delaySeconds: (map['delaySeconds'] as int?) ?? 10,
         dailyLimit: (map['dailyLimit'] as int?) ?? 0,
         simSlot: (map['simSlot'] as int?) ?? 0,
         language: (map['language'] as String?) ?? 'ar',

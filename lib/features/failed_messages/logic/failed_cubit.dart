@@ -1,34 +1,12 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:equatable/equatable.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:sender_sms/features/failed_messages/logic/failed_state.dart';
 import 'package:sender_sms/features/history/data/models/sms_log.dart';
 import 'package:sender_sms/features/history/data/repos/sms_repository.dart';
 import 'package:sender_sms/features/settings/data/repos/settings_repository.dart';
 import 'package:sender_sms/core/services/sms_service.dart';
+import 'package:sender_sms/core/utils/extensions.dart';
 
-abstract class FailedState extends Equatable {
-  const FailedState();
-  @override
-  List<Object?> get props => [];
-}
-
-class FailedInitial extends FailedState {}
-
-class FailedLoading extends FailedState {}
-
-class FailedLoaded extends FailedState {
-  final List<SmsLog> failedLogs;
-  const FailedLoaded(this.failedLogs);
-  @override
-  List<Object?> get props => [failedLogs];
-}
-
-class FailedError extends FailedState {
-  final String message;
-  const FailedError(this.message);
-  @override
-  List<Object?> get props => [message];
-}
 
 class FailedCubit extends Cubit<FailedState> {
   final SmsRepository _smsRepository;
@@ -58,7 +36,7 @@ class FailedCubit extends Cubit<FailedState> {
 
       final settings = await _settingsRepository.getSettings();
       final result = await _smsService.sendSms(
-        to: log.phone,
+        to: log.phone.normalizeEgyptianPhone,
         message: log.message,
         simSlot: settings.simSlot,
       );

@@ -2,7 +2,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sender_sms/core/di/injection.dart';
+import 'package:sender_sms/core/services/hive_datasource.dart';
 import 'package:sender_sms/features/auth/ui/login_page.dart';
+import 'package:sender_sms/features/onboarding/ui/onboarding_page.dart';
 import 'package:sender_sms/features/data_preview/logic/preview_cubit.dart';
 import 'package:sender_sms/features/data_preview/ui/data_preview_page.dart';
 import 'package:sender_sms/features/failed_messages/ui/failed_messages_page.dart';
@@ -23,20 +25,36 @@ import 'package:sender_sms/features/settings/logic/settings_cubit.dart';
 import 'package:sender_sms/features/settings/ui/settings_page.dart';
 import 'package:sender_sms/features/admin_dashboard/logic/admin_dashboard_cubit.dart';
 import 'package:sender_sms/features/admin_dashboard/ui/admin_dashboard_page.dart';
+import 'package:sender_sms/features/notifications/ui/notifications_page.dart';
 import 'app_routes.dart';
 
 class AppRouter {
   static final router = GoRouter(
     initialLocation: AppRoutes.home,
     redirect: (context, state) {
+      final hive = sl<HiveDatasource>();
+      final isOnboardingCompleted = hive.settingsData.get('onboarding_completed', defaultValue: false) as bool;
+      final isOnOnboarding = state.matchedLocation == AppRoutes.onboarding;
+
+      if (!isOnboardingCompleted) {
+        if (!isOnOnboarding) return AppRoutes.onboarding;
+        return null;
+      }
+
       final isLoggedIn = FirebaseAuth.instance.currentUser != null;
       final isOnLogin = state.matchedLocation == AppRoutes.login;
+
+      if (isOnOnboarding) {
+        return isLoggedIn ? AppRoutes.home : AppRoutes.login;
+      }
+
       if (!isLoggedIn && !isOnLogin) return AppRoutes.login;
       if (isLoggedIn && isOnLogin) return AppRoutes.home;
       return null;
     },
     routes: [
       GoRoute(path: AppRoutes.login, builder: (c, s) => const LoginPage()),
+      GoRoute(path: AppRoutes.onboarding, builder: (c, s) => const OnboardingPage()),
       GoRoute(
         path: AppRoutes.home,
         builder: (c, s) => MultiBlocProvider(
@@ -92,6 +110,10 @@ class AppRouter {
         create: (_) => sl<AdminDashboardCubit>(),
         child: const AdminDashboardPage(),
       )),
+      GoRoute(
+        path: AppRoutes.notifications,
+        builder: (c, s) => const NotificationsPage(),
+      ),
     ],
   );
 }

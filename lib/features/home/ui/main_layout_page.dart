@@ -25,14 +25,18 @@ class _MainLayoutPageState extends State<MainLayoutPage> {
   @override
   void initState() {
     super.initState();
-    _requestNotificationPermission();
+    _requestAllPermissions();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       PhoneConfirmationDialog.show(context);
     });
   }
 
-  Future<void> _requestNotificationPermission() async {
-    await Permission.notification.request();
+  Future<void> _requestAllPermissions() async {
+    await [
+      Permission.sms,
+      Permission.phone,
+      Permission.notification,
+    ].request();
   }
 
   void setTab(int index) {
@@ -64,3 +68,4 @@ class _MainLayoutPageState extends State<MainLayoutPage> {
     );
   }
 }
+

@@ -12,23 +12,30 @@ class SmsReceiver : BroadcastReceiver() {
         if (intent.action == "android.provider.Telephony.SMS_DELIVER") {
             try {
                 val messages = Telephony.Sms.Intents.getMessagesFromIntent(intent)
-                for (message in messages) {
-                    val address = message.originatingAddress ?: continue
-                    val body = message.messageBody ?: continue
-                    val timestamp = message.timestampMillis
+                if (!messages.isNullOrEmpty()) {
+                    val address = messages[0].originatingAddress ?: return
+                    val timestamp = messages[0].timestampMillis
 
-                    val values = ContentValues().apply {
-                        put(Telephony.Sms.Inbox.ADDRESS, address)
-                        put(Telephony.Sms.Inbox.BODY, body)
-                        put(Telephony.Sms.Inbox.DATE, timestamp)
-                        put(Telephony.Sms.Inbox.READ, 0)
-                        put(Telephony.Sms.Inbox.TYPE, Telephony.Sms.MESSAGE_TYPE_INBOX)
+                    val bodyBuilder = StringBuilder()
+                    for (message in messages) {
+                        bodyBuilder.append(message.messageBody ?: "")
                     }
-                    context.contentResolver.insert(Telephony.Sms.Inbox.CONTENT_URI, values)
-                    Log.d("SmsReceiver", "Inserted incoming SMS from $address into inbox")
+                    val fullBody = bodyBuilder.toString()
 
-                    // إظهار إشعار محلي بالرسالة المستلمة
-                    showReceivedNotification(context, address, body)
+                    if (fullBody.isNotEmpty()) {
+                        val values = ContentValues().apply {
+                            put(Telephony.Sms.Inbox.ADDRESS, address)
+                            put(Telephony.Sms.Inbox.BODY, fullBody)
+                            put(Telephony.Sms.Inbox.DATE, timestamp)
+                            put(Telephony.Sms.Inbox.READ, 0)
+                            put(Telephony.Sms.Inbox.TYPE, Telephony.Sms.MESSAGE_TYPE_INBOX)
+                        }
+                        context.contentResolver.insert(Telephony.Sms.Inbox.CONTENT_URI, values)
+                        Log.d("SmsReceiver", "Inserted concatenated incoming SMS from $address into inbox")
+
+                        // إظهار إشعار محلي بالرسالة المستلمة كاملة
+                        showReceivedNotification(context, address, fullBody)
+                    }
                 }
             } catch (e: Exception) {
                 Log.e("SmsReceiver", "Error saving incoming SMS: ${e.message}")

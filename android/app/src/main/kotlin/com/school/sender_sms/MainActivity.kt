@@ -53,6 +53,14 @@ class MainActivity : FlutterActivity() {
                 "isOplusDevice" -> result.success(isOplusDevice())
                 "getInboxMessages" -> getInboxMessages(result)
                 "getDevicePhoneNumber" -> getDevicePhoneNumber(result)
+                "keepScreenOn" -> {
+                    window.addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+                    result.success(true)
+                }
+                "clearKeepScreenOn" -> {
+                    window.clearFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+                    result.success(true)
+                }
                 else -> result.notImplemented()
             }
         }
@@ -71,7 +79,7 @@ class MainActivity : FlutterActivity() {
     override fun onDestroy() {
         super.onDestroy()
         activeReceivers.forEach {
-            try { unregisterReceiver(it) } catch (_: Exception) {}
+            try { applicationContext.unregisterReceiver(it) } catch (_: Exception) {}
         }
         activeReceivers.clear()
         pendingResult = null
@@ -102,13 +110,11 @@ class MainActivity : FlutterActivity() {
     }
 
     private fun openDefaultSmsSettings() {
-        // Oppo/Realme/OnePlus بيرفض Role API - نجرب الإعدادات المباشرة الأول
         if (isOplusDevice()) {
             Log.d(TAG, "Oplus device detected, trying direct settings")
             if (tryOplusDirectSettings()) return
         }
 
-        // Android 10+ Role API
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             try {
                 val roleManager = getSystemService(Context.ROLE_SERVICE) as android.app.role.RoleManager
@@ -126,7 +132,6 @@ class MainActivity : FlutterActivity() {
                 Log.e(TAG, "roleRequest failed: ${e.message}")
             }
         } else {
-            // Android 9 and below
             try {
                 val intent = Intent("android.provider.Telephony.ACTION_CHANGE_DEFAULT").apply {
                     putExtra("package", packageName)
@@ -139,10 +144,8 @@ class MainActivity : FlutterActivity() {
             }
         }
 
-        // Fallback: Default Apps Settings
         if (tryStart(Intent(Settings.ACTION_MANAGE_DEFAULT_APPS_SETTINGS), "defaultApps")) return
 
-        // Fallback: App Info Page
         if (tryStart(
                 Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
                     data = android.net.Uri.fromParts("package", packageName, null)
@@ -157,23 +160,16 @@ class MainActivity : FlutterActivity() {
 
     private fun tryOplusDirectSettings(): Boolean {
         val attempts = listOf(
-            // 1: التطبيقات الافتراضية مباشرة
             Intent(Settings.ACTION_MANAGE_DEFAULT_APPS_SETTINGS),
-
-            // 2: صفحة تفاصيل التطبيق (فيها زر "تعيين كافتراضي")
             Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
                 data = android.net.Uri.fromParts("package", packageName, null)
             },
-
-            // 3: ColorOS Default Apps Activity
             Intent().apply {
                 setClassName(
                     "com.android.settings",
                     "com.android.settings.Settings\$DefaultAppSettingsActivity"
                 )
             },
-
-            // 4: ColorOS newer
             Intent("android.settings.MANAGE_DEFAULT_APPS_SETTINGS")
         )
 
@@ -227,54 +223,70 @@ class MainActivity : FlutterActivity() {
             val numParts = parts.size
             val sentAction = "SMS_SENT_${UUID.randomUUID()}"
 
-            var receivedCount = 0
-            var hasFailed = false
-            var finalResultCode = Activity.RESULT_OK
-            var isCompleted = false
+            val receivedCount = java.util.concurrent.atomic.AtomicInteger(0)
+            val hasFailed = java.util.concurrent.atomic.AtomicBoolean(false)
+            val finalResultCode = java.util.concurrent.atomic.AtomicInteger(Activity.RESULT_OK)
+            val isCompleted = java.util.concurrent.atomic.AtomicBoolean(false)
 
             val handler = Handler(Looper.getMainLooper())
             var timeoutRunnable: Runnable? = null
 
             val receiver = object : BroadcastReceiver() {
                 override fun onReceive(context: Context?, intent: Intent?) {
-                    if (isCompleted) return
-                    receivedCount++
-                    if (resultCode != Activity.RESULT_OK) {
-                        hasFailed = true
-                        finalResultCode = resultCode
+                    if (isCompleted.get()) return
+
+                    val currentResultCode = resultCode
+                    val count = receivedCount.incrementAndGet()
+
+                    if (currentResultCode != Activity.RESULT_OK) {
+                        hasFailed.set(true)
+                        finalResultCode.set(currentResultCode)
                     }
-                    if (receivedCount >= numParts) {
-                        isCompleted = true
+
+                    if (count >= numParts) {
+                        if (!isCompleted.compareAndSet(false, true)) return
                         timeoutRunnable?.let { handler.removeCallbacks(it) }
                         safeUnregister(this)
-                        val response = if (hasFailed) {
-                            mapOf("success" to false, "error" to getSmsErrorString(finalResultCode))
+
+                        val response = if (hasFailed.get()) {
+                            mapOf(
+                                "success" to false,
+                                "error" to getSmsErrorString(finalResultCode.get())
+                            )
                         } else {
-                            showNotification("تم إرسال الرسالة", "تم إرسال الرسالة بنجاح إلى $phone")
+                            showNotification(
+                                "تم إرسال الرسالة",
+                                "تم إرسال الرسالة بنجاح إلى $phone"
+                            )
                             mapOf("success" to true)
                         }
-                        result.success(response)
+                        handler.post { result.success(response) }
                     }
                 }
             }
 
             timeoutRunnable = Runnable {
-                if (!isCompleted) {
-                    isCompleted = true
+                if (isCompleted.compareAndSet(false, true)) {
                     safeUnregister(receiver)
-                    result.success(mapOf("success" to false, "error" to "timeout"))
+                    handler.post {
+                        result.success(mapOf("success" to false, "error" to "timeout"))
+                    }
                 }
             }
 
             activeReceivers.add(receiver)
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                registerReceiver(receiver, IntentFilter(sentAction), Context.RECEIVER_EXPORTED)
+                applicationContext.registerReceiver(
+                    receiver,
+                    IntentFilter(sentAction),
+                    Context.RECEIVER_EXPORTED
+                )
             } else {
-                registerReceiver(receiver, IntentFilter(sentAction))
+                applicationContext.registerReceiver(receiver, IntentFilter(sentAction))
             }
 
-            handler.postDelayed(timeoutRunnable, 35_000)
+            handler.postDelayed(timeoutRunnable, 60_000)
 
             if (numParts > 1) {
                 val sentIntents = parts.mapIndexed { index, _ ->
@@ -289,6 +301,7 @@ class MainActivity : FlutterActivity() {
                         PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
                     )
                 }.toCollection(ArrayList())
+
                 smsManager.sendMultipartTextMessage(phone, null, parts, sentIntents, null)
             } else {
                 val intent = Intent(sentAction).apply {
@@ -323,7 +336,7 @@ class MainActivity : FlutterActivity() {
 
     private fun safeUnregister(receiver: BroadcastReceiver) {
         activeReceivers.remove(receiver)
-        try { unregisterReceiver(receiver) } catch (e: Exception) {
+        try { applicationContext.unregisterReceiver(receiver) } catch (e: Exception) {
             Log.e(TAG, "Error unregistering receiver: ${e.message}")
         }
     }
@@ -334,19 +347,25 @@ class MainActivity : FlutterActivity() {
 
     private fun getSmsManagerForSlot(simSlot: Int): SmsManager {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP_MR1) {
-            val subscriptionManager =
-                getSystemService(Context.TELEPHONY_SUBSCRIPTION_SERVICE) as SubscriptionManager
-            @Suppress("DEPRECATION")
-            val subs = subscriptionManager.activeSubscriptionInfoList
-            if (!subs.isNullOrEmpty() && simSlot < subs.size) {
-                val subId = subs[simSlot].subscriptionId
-                return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                    val baseSmsManager = getSystemService(SmsManager::class.java)
-                    baseSmsManager?.createForSubscriptionId(subId) ?: getSystemService(SmsManager::class.java)
-                } else {
-                    @Suppress("DEPRECATION")
-                    SmsManager.getSmsManagerForSubscriptionId(subId)
+            try {
+                val subscriptionManager =
+                    getSystemService(Context.TELEPHONY_SUBSCRIPTION_SERVICE) as SubscriptionManager
+                @Suppress("DEPRECATION")
+                val subs = subscriptionManager.activeSubscriptionInfoList
+                if (!subs.isNullOrEmpty() && simSlot < subs.size) {
+                    val subId = subs[simSlot].subscriptionId
+                    return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                        val baseSmsManager = getSystemService(SmsManager::class.java)
+                        baseSmsManager?.createForSubscriptionId(subId) ?: getSystemService(SmsManager::class.java)
+                    } else {
+                        @Suppress("DEPRECATION")
+                        SmsManager.getSmsManagerForSubscriptionId(subId)
+                    }
                 }
+            } catch (e: SecurityException) {
+                Log.w(TAG, "SecurityException reading subscription info: ${e.message}. Falling back to default SmsManager.")
+            } catch (e: Exception) {
+                Log.w(TAG, "Exception reading subscription info: ${e.message}. Falling back to default SmsManager.")
             }
         }
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -380,20 +399,20 @@ class MainActivity : FlutterActivity() {
         val messages = mutableListOf<Map<String, Any>>()
         val uri = android.net.Uri.parse("content://sms/inbox")
         val projection = arrayOf("_id", "address", "body", "date")
-        
+
         try {
             val cursor = contentResolver.query(uri, projection, null, null, "date DESC")
             cursor?.use { c ->
                 val addressIndex = c.getColumnIndex("address")
                 val bodyIndex = c.getColumnIndex("body")
                 val dateIndex = c.getColumnIndex("date")
-                
+
                 var count = 0
                 while (c.moveToNext() && count < 200) {
                     val address = c.getString(addressIndex) ?: ""
                     val body = c.getString(bodyIndex) ?: ""
                     val date = c.getLong(dateIndex)
-                    
+
                     messages.add(mapOf(
                         "sender" to address,
                         "body" to body,
@@ -434,8 +453,7 @@ class MainActivity : FlutterActivity() {
 
         try {
             var phoneNumber: String? = null
-            
-            // Try SubscriptionManager (API 22+)
+
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP_MR1) {
                 val subscriptionManager = getSystemService(Context.TELEPHONY_SUBSCRIPTION_SERVICE) as SubscriptionManager
                 @Suppress("DEPRECATION")
@@ -449,14 +467,13 @@ class MainActivity : FlutterActivity() {
                     }
                 }
             }
-            
-            // Fallback to TelephonyManager if SubscriptionManager failed or returned null/empty
+
             if (phoneNumber.isNullOrEmpty()) {
                 val telephonyManager = getSystemService(Context.TELEPHONY_SERVICE) as android.telephony.TelephonyManager
                 @Suppress("DEPRECATION", "HardwareIds")
                 phoneNumber = telephonyManager.line1Number
             }
-            
+
             result.success(phoneNumber ?: "")
         } catch (e: Exception) {
             result.error("ERROR", e.message ?: "Failed to read phone number", null)
@@ -488,7 +505,7 @@ class MainActivity : FlutterActivity() {
             .setAutoCancel(true)
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            builder.setColor(0xFF1B9016.toInt()) // AppColors.primary
+            builder.setColor(0xFF1B9016.toInt())
         }
 
         notificationManager.notify(1002, builder.build())

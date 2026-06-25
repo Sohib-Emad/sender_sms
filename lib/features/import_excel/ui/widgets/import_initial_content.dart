@@ -68,9 +68,9 @@ class ImportInitialContent extends StatelessWidget {
             onTap: () => context.read<ImportCubit>().pickFile(),
             child: Container(
               decoration: BoxDecoration(
-                border: Border.all(color: AppColors.primary.withOpacity(0.5), width: 2),
+                border: Border.all(color: AppColors.primary.withValues(alpha: 0.5), width: 2),
                 borderRadius: BorderRadius.circular(20),
-                color: AppColors.primary.withOpacity(0.05),
+                color: AppColors.primary.withValues(alpha: 0.05),
               ),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -80,8 +80,8 @@ class ImportInitialContent extends StatelessWidget {
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         colors: [
-                          AppColors.primary.withOpacity(0.2),
-                          AppColors.primaryLight.withOpacity(0.1),
+                          AppColors.primary.withValues(alpha: 0.2),
+                          AppColors.primaryLight.withValues(alpha: 0.1),
                         ],
                       ),
                       shape: BoxShape.circle,
